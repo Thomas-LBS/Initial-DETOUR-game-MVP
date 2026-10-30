@@ -27,7 +27,7 @@
   const keys=new Set();
   let chapterIndex=0,phase='title',dialogueOpen=false,player={x:8,y:11,dir:'down'},lucas={x:12,y:11},maya={x:11,y:10};
   let elapsed=0,last=0,nextMove=0,busY=-5,seenMaya=false,noticedRoad=false,screenShake=0,impactFlash=0,hasReached=false;
-  let ending=null,choiceButtons=[],socialPing=false,socialReaction=false,lastPlayerMoveAt=0;
+  let ending=null,choiceButtons=[],socialPing=false,socialReaction=false,lastPlayerMoveAt=0,selectedAvatar='boy';
   const pal={grass:'#88b47b',grass2:'#7eaa77',leaf:'#447e61',leaf2:'#66a577',dark:'#294a52',light:'#ecf2cc',stone:'#cccdb2',pave:'#e4dfc4',road:'#566871',edge:'#384e5c',cream:'#f8efcc',water:'#87c7c3',yellow:'#ebbe68',brick:'#bb866c',roof:'#be765d',shadow:'#274e5580'};
   const rand=(x,y)=>((x*73856093^y*19349663)>>>0)%100;
   const px=(x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
@@ -65,6 +65,15 @@
     const people={LUCAS:['#d89061','#513a32'],MAYA:['#a57bc1','#42334c'],NOAH:['#e2a477','#493b37'],LINA:['#b59bcb','#4c3b45'],EXPLORER:['#6e9fbd','#3b364c']};
     const [shirt,hair]=people[name]||['#84a899','#41414b'];
     const dot=(x,y,w,h,col)=>{p.fillStyle=col;p.fillRect(x,y,w,h);};
+    if(name==='EXPLORER'&&selectedAvatar==='otter'){
+      dot(0,0,24,24,'#69488d');dot(4,4,5,7,'#734635');dot(15,4,5,7,'#734635');
+      dot(5,6,14,16,'#855942');dot(7,12,10,8,'#E4C8A4');
+      dot(8,11,2,2,'#233345');dot(15,11,2,2,'#233345');dot(11,15,3,2,'#263545');return;
+    }
+    if(name==='EXPLORER'){
+      const avatar=Art.AVATARS[selectedAvatar]||Art.AVATARS.boy;
+      shirt=avatar.shirt;hair=avatar.hair;
+    }
     dot(0,0,24,24,'#69488d');dot(4,16,16,8,shirt);
     dot(7,6,10,11,'#ebbc98');dot(5,4,14,5,hair);dot(7,2,10,4,hair);
     dot(6,8,2,5,hair);dot(16,8,2,5,hair);
@@ -106,7 +115,28 @@
     fall:{title:'BAD END: CLOUT DROP',body:'You climb for the perfect picture. A loose foothold gives way. The phone tumbles away, and a friend urgently calls for help.',reflection:'A closed structure can be genuinely dangerous. The cartoon fall is not a prediction; how else might you get the photo?'}
   };
   const overlayTemplates={
-    title:()=>`<div class="overlay-card dark-bubble"><span class="tiny">✳ DETOUR / THREE CHAPTERS</span><h3>DETOUR<span style="color:#e9b879">.</span></h3><p>Explore Westside. Meet friends, make your own choices, and experience how each situation unfolds. <strong>Take all the time you need.</strong></p><div class="buttons"><button class="pixel-btn" data-action="start">▶ START ADVENTURE</button></div></div>`,
+    title:()=>`<div class="overlay-card dark-bubble welcome-card">
+      <span class="tiny">✳ WESTSIDE / THREE CHAPTERS</span>
+      <h3>DETOUR<span style="color:#e9b879">.</span></h3>
+      <p>Explore the neighborhood, meet your crew, and find out what happens when the pressure is on.</p>
+      <div class="welcome-banner" aria-hidden="true"><span>✦</span> YOUR STORY. YOUR CHOICES. <span>✦</span></div>
+      <div class="buttons"><button class="pixel-btn" data-action="start">▶ START ADVENTURE</button></div>
+      <p class="small-help">Take your time: decisions have no countdown.</p>
+    </div>`,
+    avatar:()=>`<div class="overlay-card dark-bubble avatar-picker">
+      <span class="tiny">CHARACTER SELECT · STEP 02/02</span>
+      <h3>CHOOSE YOUR HERO</h3>
+      <p>Who is exploring Westside today?</p>
+      <div class="avatar-grid">
+        ${Object.entries(Art.AVATARS).map(([key,profile])=>`
+          <button class="avatar-option" data-action="choose-avatar" data-avatar="${key}" aria-label="Play as ${profile.label}">
+            <canvas width="64" height="64" data-avatar-preview="${key}" aria-hidden="true"></canvas>
+            <span class="avatar-name">${profile.label}</span>
+            <span class="avatar-subtitle">${profile.subtitle}</span>
+          </button>`).join('')}
+      </div>
+      <button class="pixel-btn secondary back-to-title" data-action="back">← BACK</button>
+    </div>`,
     gameover:()=>{
       const info=OUTCOME_TEXT[ending]||OUTCOME_TEXT.collision;
       return `<div class="overlay-card dark-bubble bad-ending"><span class="tiny" style="color:#f0c3ac">✱ PIXEL SHOCK · A SERIOUS CONSEQUENCE</span><h3>${info.title}</h3><p>${info.body}</p><p class="ending-stat">${info.reflection}</p><div class="buttons"><button class="pixel-btn" data-action="retry">↶ RETRY DECISION</button><button class="pixel-btn secondary" data-action="reset">RESTART</button></div></div>`;
@@ -121,9 +151,24 @@
   };
   function showOverlay(type){
     overlay.innerHTML=overlayTemplates[type]?.()||'';
+    if(type==='avatar'){
+      overlay.querySelectorAll('[data-avatar-preview]').forEach(c=>{
+        const p=c.getContext('2d');if(!p)return;
+        p.imageSmoothingEnabled=false;p.fillStyle='#42335A';p.fillRect(0,0,64,64);
+        p.save();p.scale(2,2);
+        Art.drawSprite(p,{x:.4,y:.42,face:'down',time:0,variant:'player',avatar:c.dataset.avatarPreview});
+        p.restore();
+      });
+    }
     overlay.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>{
       const a=b.dataset.action;
-      if(a==='start')start();else if(a==='retry')retry();else if(a==='reset')reset();else if(a==='next')nextChapter();
+      if(a==='start')showOverlay('avatar');
+      else if(a==='choose-avatar'){
+        const key=b.dataset.avatar;
+        if(!Art.AVATARS[key])return;
+        selectedAvatar=key;start();
+      }else if(a==='back')showOverlay('title');
+      else if(a==='retry')retry();else if(a==='reset')reset();else if(a==='next')nextChapter();
     }));
   }
   function updateJournal(){
@@ -346,7 +391,7 @@
   }
   // 4-direction, 4-frame GBA-era inspired pixel sprites, same movement hit boxes.
   function person(x,y,shirt,hair='#493b3b',moving=false,face='down',variant='npc'){
-    Art.drawSprite(ctx,{x,y,shirt,hair,moving:moving&&!reducedMotion,face,time:elapsed,variant});
+    Art.drawSprite(ctx,{x,y,shirt,hair,moving:moving&&!reducedMotion,face,time:elapsed,variant,avatar:selectedAvatar});
   }
   function drawBus(x,y){
     const xx=Math.round(x*T),yy=Math.round(y*T);

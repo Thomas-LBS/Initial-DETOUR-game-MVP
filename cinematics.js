@@ -26,6 +26,8 @@
       rect(ctx,x+Math.cos(a)*d,y+Math.sin(a)*d,3+i%5,4+i%4,colors[i%colors.length]);}
   }
   function redInkBurst(ctx,t){
+    // Square red-ink fragments are abstract cartoon punctuation, not anatomy.
+
     const colors=['#BA3D55','#D95B63','#F0876B','#F4B17B'];
     for(let i=0;i<16;i++){
       const dist=16+(i%5)*11,side=i%2===0?0:480,angle=i*2.6;

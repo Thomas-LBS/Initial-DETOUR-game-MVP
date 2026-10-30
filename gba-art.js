@@ -12,9 +12,42 @@
   const normalizeDirection=face=>['down','up','left','right'].includes(face)?face:'down';
   const walkFrame=(time,moving)=>moving?Math.floor(time*8)%4:0;
   const skin='#F2C9A1',skinShadow='#D9A27F',ink='#263B4D',shoe='#263747';
-  function drawSprite(ctx,{x,y,shirt='#6EA8BB',hair='#413845',moving=false,face='down',time=0,variant='npc'}={}){
+  const AVATARS=Object.freeze({
+    boy:Object.freeze({label:'Boy',subtitle:'The explorer',shirt:'#528CB9',hair:'#453845',accent:'#E9C07C'}),
+    girl:Object.freeze({label:'Girl',subtitle:'The trailblazer',shirt:'#B16B9F',hair:'#523454',accent:'#F0CF9A'}),
+    nonbinary:Object.freeze({label:'Non-binary',subtitle:'The original',shirt:'#5A9C87',hair:'#344A65',accent:'#F2D891'}),
+    otter:Object.freeze({label:'Otter',subtitle:'The wildcard',shirt:'#5A91A6',hair:'#855942',accent:'#E8D4A8'})
+  });
+  function drawOtterSprite(ctx,{x,y,moving=false,face='down',time=0}={}){
+    const frame=walkFrame(time,moving),stride=[0,2,0,-2][frame];
+    const X=Math.round(x*TILE),Y=Math.round(y*TILE),top=Y-7-(moving&&frame%2?1:0);
+    const P=(dx,dy,w,h,col)=>rect(ctx,X+dx,top+dy,w,h,col);
+    rect(ctx,X+2,Y+15,15,3,'#1C3A4577');
+    // Tail, short paws, distinct rounded head and ears: original otter pixel character.
+    if(face==='right')P(-1,15,7,5,'#855942');
+    else if(face==='left')P(15,15,7,5,'#855942');
+    else P(14,17,8,5,'#734635');
+    P(5+stride,20,5,4,'#493E3A');P(12-stride,20,5,4,'#493E3A');
+    P(4,11,15,11,'#79533E');P(6,13,12,8,'#5A91A6');P(7,15,10,5,'#88B8C2');
+    P(2,13,4,7,'#855942');P(18,13,4,7,'#855942');
+    P(5,2,14,14,'#855942');P(4,1,5,6,'#734635');P(16,1,5,6,'#734635');
+    P(6,5,12,9,'#AE7955');P(8,10,9,5,'#E4C8A4');P(11,10,4,3,'#27384B');
+    if(face!=='up'){
+      P(face==='left'?8:8,7,2,2,'#203040');
+      if(face==='down')P(16,7,2,2,'#203040');
+      P(7,12,3,1,'#F4DBBA');P(16,12,3,1,'#F4DBBA');
+    }
+    P(6,18,2,3,'#EAD98F');
+  }
+
+  function drawSprite(ctx,{x,y,shirt='#6EA8BB',hair='#413845',moving=false,face='down',time=0,variant='npc',avatar='boy'}={}){
     if(!ctx||!Number.isFinite(x)||!Number.isFinite(y))return;
     face=normalizeDirection(face);
+    if(variant==='player'){
+      const profile=AVATARS[avatar]||AVATARS.boy;
+      if(avatar==='otter'){drawOtterSprite(ctx,{x,y,moving,face,time});return;}
+      shirt=profile.shirt;hair=profile.hair;
+    }
     const frame=walkFrame(time,moving),stride=[0,2,0,-2][frame],bob=moving?(frame%2?1:0):Math.sin(time*2+(variant==='npc'?1:0))>0.83?1:0;
     const X=Math.round(x*TILE),Y=Math.round(y*TILE),top=Y-7-bob;
     const P=(dx,dy,w,h,c)=>rect(ctx,X+dx,top+dy,w,h,c);
@@ -57,7 +90,14 @@
     }
     // Tiny necklace / collar and pocket create distinctive clothing texture.
     P(9,10,4,2,'#FAE4BF');P(face==='up'?12:10,17,3,2,'#FFFFFF65');
-    if(variant==='player'){P(5,12,2,5,'#EBC770');P(5,17,2,2,'#D49D52');}
+    if(variant==='player'){
+      const profile=AVATARS[avatar]||AVATARS.boy;
+      P(5,12,2,5,profile.accent);P(5,17,2,2,'#D49D52');
+      // Tiny distinctive hair/accessory pixels without gender stereotyping.
+      if(avatar==='girl'){P(5,8,2,9,hair);P(16,8,3,9,hair);}
+      if(avatar==='nonbinary'){P(5,5,11,2,profile.accent);P(8,18,5,2,profile.accent);}
+      if(avatar==='boy'){P(5,2,12,2,'#6A5261');}
+    }
   }
   function scatter(ctx,seed,area,colors,count=36){
     for(let i=0;i<count;i++){
@@ -154,5 +194,5 @@
       if(phase==='explore')rect(ctx,417,182+(f%2),4,3,'#F8EEC9');
     }
   }
-  return {TILE,walkFrame,normalizeDirection,drawSprite,drawScene};
+  return {TILE,AVATARS,walkFrame,normalizeDirection,drawSprite,drawScene};
 });

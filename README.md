@@ -124,3 +124,13 @@ This is a **visual-only iteration**. The three chapters, twelve decisions, exist
 - Purple Night surrounds colorful in-game environments; main page headings are explicitly high contrast.
 
 Scripts/styles are versioned with `?v=7` to reduce stale GitHub Pages caches. All visual rendering is original and implemented without dependencies.
+
+## Version 8 · Character selection & dialogue accessibility
+
+- Starts on a presentation screen. Start Adventure leads to a selectable character grid, then enters the game.
+- Four original playable avatars: boy, girl, non-binary explorer, or pixel-art otter. The chosen sprite persists across all three chapters and checkpoint replays. The otter has a dedicated four-direction sprite.
+- NPC dialog retains its comic-book style, but all four responses are readable in ordinary (non-fullscreen) browser mode via compact two-column choices and an accessible scroll fallback.
+- Dark and light speech bubble contrast, no decision countdown, original retro chiptunes and existing consequences stay intact.
+- Purple Night website and animated falling pixel-snow remain unchanged; scripts/styles now use `?v=8` to avoid cache staleness.
+
+Danger scenes retain exaggerated non-graphic red ink splashes and flying props; graphic dismemberment of teen characters is not depicted.

@@ -36,8 +36,8 @@ test('merge effect only applies to genuinely nearby particles',()=>{
 test('page contains a noninteractive animated background and new versioned artwork modules',()=>{
   const html=read('index.html'),css=read('styles.css'),game=read('game.js');
   assert.match(html,/id="pixel-snow"/);
-  assert.match(html,/pixel-snow\.js\?v=7/);
-  assert.match(html,/gba-art\.js\?v=7/);
+  assert.match(html,/pixel-snow\.js\?v=8/);
+  assert.match(html,/gba-art\.js\?v=8/);
   assert.match(css,/#pixel-snow\{[^}]*pointer-events:none/);
   assert.match(game,/Art\.drawSprite/);
   assert.match(game,/Art\.drawScene/);

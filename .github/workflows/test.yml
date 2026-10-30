@@ -15,3 +15,14 @@ jobs:
           for file in game.js logic.js music.js cinematics.js social.js gba-art.js pixel-snow.js; do node --check "$file"; done
       - name: Run unit tests
         run: node --test tests/*.test.js
+      - name: Install browser smoke dependencies
+        run: npm install --no-save playwright-core@1.56.1
+      - name: Browser QA (desktop, compact desktop, mobile)
+        run: node tests/browser-smoke.mjs
+      - name: Upload QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detour-v8-browser-qa
+          path: browser-qa/*.png
+          if-no-files-found: ignore

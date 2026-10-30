@@ -82,3 +82,14 @@ MIT; see [`LICENSE`](LICENSE).
 ## Version 4: comic consequence cinematics
 
 Three original, non-graphic pixel-art cutscenes: a school-bus collision with a flying shoe and exaggerated crash cloud; a rooftop slip with a tumbling phone; and a bullying photo that goes viral until Amine leaves the group chat. The satire is aimed at risky actions and group behavior, not at the victim. Original chiptune stings play with each event. The decision timer remains removed. All CSS and JS asset URLs use `?v=4` to reduce stale caches on GitHub Pages. Reduced-motion preferences disable screen shaking.
+
+## Version 5: game-first cosmic redesign
+
+- Rebuilt the page as an immersive, CrazyGames-inspired game portal layout, with original design and branding.
+- Palette sampled from the provided purple-night reference: `#0D0407`, `#23172F`, `#32204A`, `#482F69`, and `#69488D`.
+- The game viewport occupies **76% of the viewport height**, or more on responsive layouts. Native pixel-art aspect ratio is preserved without stretching.
+- Dark-background/light-text and light-background/dark-text combinations are applied to foreground location labels and comic-style NPC speech bubbles.
+- A visible **EXPLORE / E · TALK / DECIDE** HUD sits above the canvas drawing rather than behind it.
+- Clickable chapter selector, touch controls, and a fullscreen action. Existing chapters, four-choice branching stories, untimed decisions, and original audio are preserved.
+- Assets use query-string version `v=5` to reduce stale-cache problems after Pages deployment.
+- Includes five new static UI/layout tests, with explicit contrast checks during design.

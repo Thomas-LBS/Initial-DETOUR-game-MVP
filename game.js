@@ -31,6 +31,30 @@
   const tile=(x,y,col)=>px(x*T,y*T,T,T,col);
   function label(text,x,y,col='#e9f7d5',size=8){ctx.font=`bold ${size}px monospace`;ctx.textAlign='center';ctx.fillStyle='#243c44';ctx.fillText(text,x+1,y+1);ctx.fillStyle=col;ctx.fillText(text,x,y);}
   function current(){return L.chapter(chapterIndex);}
+  // Always-on DOM HUD sits above the canvas, so location and interaction labels stay readable.
+  function updateHud(){
+    const location=document.getElementById('location-chip');
+    const mode=document.getElementById('mode-chip');
+    const hint=document.getElementById('hud-prompt');
+    if(!location||!mode||!hint)return;
+    location.textContent=chapterIndex===0?'SCHOOL · WESTSIDE':current().location;
+    const modeNames={title:'READY',explore:'EXPLORE',decision:'DECIDE',danger:'WATCH',safe:'TRAVELLING',cooperative:'TOGETHER',social:'SOCIAL',gameover:'RETRY',complete:'COMPLETE'};
+    mode.textContent=modeNames[phase]||'EXPLORE';
+    hint.textContent=phase==='explore'
+      ?(L.inRange(player,current().target,2)?'E · TALK':'WASD · MOVE')
+      :phase==='decision'?'1–4 · CHOOSE'
+      :phase==='title'?'PRESS START'
+      :phase==='gameover'?'RETRY AVAILABLE'
+      :phase==='complete'?'CHAPTER COMPLETE':'THE STORY UNFOLDS';
+  }
+  function syncChapterNav(){
+    document.querySelectorAll('[data-chapter]').forEach(button=>{
+      const selected=Number(button.dataset.chapter)===chapterIndex;
+      button.classList.toggle('is-active',selected);
+      if(selected)button.setAttribute('aria-current','true');
+      else button.removeAttribute('aria-current');
+    });
+  }
   function showToast(text){toast.textContent=text;toast.classList.toggle('hidden',!text);}
   function setPhase(p){phase=p;elapsed=0;nextMove=0;updateJournal();}
   function openDialogue(name,text,choices,{dark=false}={}){
@@ -97,6 +121,7 @@
     ['explore','decide','reflect'].forEach((id,i)=>{const el=document.getElementById('stage-'+id);el.className='quest-stage '+state[i];el.querySelector('.stage-check').textContent=state[i]==='done'?'✓':state[i]==='active'?'●':'○';});
     const notes={title:'Each chapter explores social pressure and safety. Every outcome is fictional, and you can always retry.',explore:'Explore the neighborhood. Use arrow keys/WASD to move and E or Space to talk to friends.',decision:'Take your time. Press 1, 2, 3 or 4, or click a response. No countdown.',danger:'Watch what unfolds. Consequences are one possible outcome, not a prediction.',safe:'Your choice changes the scene and how friends respond.',cooperative:'You are working with others to find a way forward.',social:'Other people react to your boundary. Their mockery is their responsibility.',gameover:'A hard outcome is a chance to explore another response, not a judgment of you.',complete:'You completed this chapter. Try a different choice or move to the next scenario.'};
     fieldNote.textContent=notes[phase];
+    updateHud();syncChapterNav();
     statusEl.textContent={title:'PRESS START TO BEGIN YOUR DAY',explore:`EXPLORE · ${data.quest.toUpperCase()}`,decision:'DECIDE · TAKE YOUR TIME',danger:'CONSEQUENCES UNFOLDING…',safe:'THE STORY CONTINUES…',cooperative:'WORKING TOGETHER…',social:'FEELING THE SOCIAL FALLOUT…',gameover:'CHECKPOINT AVAILABLE · TRY AGAIN',complete:'CHAPTER CLEARED · CONTINUE OR REPLAY'}[phase];
   }
   function reset(){music.stop();setChapter(0);setPhase('title');showOverlay('title');}
@@ -177,6 +202,7 @@
     player.dir=dx>0?'right':dx<0?'left':dy<0?'up':'down';
     if(L.canWalk(nx,ny,chapterIndex)&&!(nx===lucas.x&&ny===lucas.y)&&!(chapterIndex===0&&nx===maya.x&&ny===maya.y)){player.x=nx;player.y=ny;}
     if(L.inRange(player,current().target,2))statusEl.textContent='NEAR FRIENDS · PRESS E TO TALK';
+    updateHud();
   }
   function keyToDir(k){return {arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]}[k];}
   window.addEventListener('keydown',e=>{
@@ -198,6 +224,28 @@
   });
   document.getElementById('touch-interact').addEventListener('click',interact);
   document.getElementById('restart-btn').addEventListener('click',reset);
+  // Chapter switch is an explicit user action, never an automatic skip.
+  document.querySelectorAll('[data-chapter]').forEach(button=>button.addEventListener('click',()=>{
+    const idx=Number(button.dataset.chapter);
+    if(!Number.isInteger(idx)||idx<0||idx>=L.CHAPTERS.length)return;
+    music.stop();setChapter(idx);setPhase('explore');music.start();
+  }));
+  const screenWrap=document.getElementById('screen-wrap');
+  const fullScreenButton=document.getElementById('fullscreen-btn');
+  if(fullScreenButton&&screenWrap){
+    fullScreenButton.addEventListener('click',async()=>{
+      try{
+        if(document.fullscreenElement)await document.exitFullscreen();
+        else if(screenWrap.requestFullscreen)await screenWrap.requestFullscreen();
+      }catch(err){console.warn('Fullscreen mode unavailable:',err);}
+    });
+    document.addEventListener('fullscreenchange',()=>{
+      const active=!!document.fullscreenElement;
+      fullScreenButton.textContent=active?'⤢':'⛶';
+      fullScreenButton.title=active?'Exit full screen (Esc)':'Full screen (Esc to exit)';
+      fullScreenButton.setAttribute('aria-label',active?'Exit full screen':'Enter full screen');
+    });
+  }
   document.getElementById('mute-btn').addEventListener('click',()=>{const enabled=music.toggle();const b=document.getElementById('mute-btn');b.textContent=enabled?'♫':'♪̸';b.setAttribute('aria-label',enabled?'Mute music':'Unmute music');b.title=enabled?'Mute music':'Unmute music';});
   // ALL ART BELOW IS DRAWN FROM CODE: original tiles, characters and vehicles, no copyrighted assets.
   function ground(){

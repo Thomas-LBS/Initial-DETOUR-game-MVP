@@ -1,116 +1,196 @@
 (() => {
   'use strict';
-  const L = window.DetourLogic;
-  const canvas = document.getElementById('game-canvas');
-  const ctx = canvas.getContext('2d', {alpha:false});
-  if(!ctx){ document.getElementById('screen-overlay').textContent='Your browser does not support Canvas.'; return; }
-  ctx.imageSmoothingEnabled = false;
-  const T=16, W=480,H=320;
+  const L=window.DetourLogic;
+  const music=window.DetourMusic;
+  const canvas=document.getElementById('game-canvas');
+  const ctx=canvas.getContext('2d',{alpha:false});
+  if(!ctx){document.getElementById('screen-overlay').textContent='Your browser does not support Canvas.';return;}
+  ctx.imageSmoothingEnabled=false;
+  const T=16,W=480,H=320;
   const overlay=document.getElementById('screen-overlay');
   const dialogue=document.getElementById('dialogue');
   const speakerEl=document.getElementById('speaker');
   const dialogueText=document.getElementById('dialogue-text');
   const actionsEl=document.getElementById('dialogue-actions');
+  const timerEl=document.getElementById('decision-timer');
+  const timerNumber=document.getElementById('timer-number');
+  const timerFill=document.getElementById('timer-fill');
+  const pauseBtn=document.getElementById('pause-btn');
   const fieldNote=document.getElementById('field-note');
   const statusEl=document.getElementById('status-line');
   const sceneLabel=document.getElementById('scene-label');
+  const questTitle=document.getElementById('quest-title');
+  const questDetail=document.getElementById('quest-detail');
+  const chapterNumber=document.getElementById('chapter-number');
+  const toast=document.getElementById('scene-toast');
   const keys=new Set();
-  let phase='title', dialogueOpen=false, player={x:8,y:11,dir:'down'}, lucas={x:12,y:11}, maya={x:11,y:10};
-  let elapsed=0, last=0, nextMove=0, busY=-5, seenMaya=false, noticedRoad=false, crashCount=0, soundOn=false, audio=null, screenShake=0, impactFlash=0, hasReached=false;
+  let chapterIndex=0,phase='title',dialogueOpen=false,player={x:8,y:11,dir:'down'},lucas={x:12,y:11},maya={x:11,y:10};
+  let elapsed=0,last=0,nextMove=0,busY=-5,seenMaya=false,noticedRoad=false,screenShake=0,impactFlash=0,hasReached=false;
+  let ending=null,wasTimeout=false,decisionLeft=L.DECISION_SECONDS,decisionActive=false,decisionPaused=false,choiceButtons=[];
   const pal={grass:'#88b47b',grass2:'#7eaa77',leaf:'#447e61',leaf2:'#66a577',dark:'#294a52',light:'#ecf2cc',stone:'#cccdb2',pave:'#e4dfc4',road:'#566871',edge:'#384e5c',cream:'#f8efcc',water:'#87c7c3',yellow:'#ebbe68',brick:'#bb866c',roof:'#be765d',shadow:'#274e5580'};
-  const objects=[{x:12,y:11,id:'lucas'},{x:11,y:10,id:'maya'},{x:13,y:14,id:'sign'}];
   const rand=(x,y)=>((x*73856093^y*19349663)>>>0)%100;
   const px=(x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
   const tile=(x,y,col)=>px(x*T,y*T,T,T,col);
   function label(text,x,y,col='#e9f7d5',size=8){ctx.font=`bold ${size}px monospace`;ctx.textAlign='center';ctx.fillStyle='#243c44';ctx.fillText(text,x+1,y+1);ctx.fillStyle=col;ctx.fillText(text,x,y);}
-  function sound(type){
-    if(!soundOn) return;
-    try {audio ??= new (window.AudioContext||window.webkitAudioContext)(); if(audio.state==='suspended') audio.resume();
-      const osc=audio.createOscillator(), gain=audio.createGain(); const now=audio.currentTime;
-      osc.type=type==='danger'?'sawtooth':'square';osc.frequency.setValueAtTime(type==='danger'?170:type==='win'?620:360,now);
-      osc.frequency.exponentialRampToValueAtTime(type==='danger'?70:type==='win'?900:470,now+.12);
-      gain.gain.setValueAtTime(.07,now);gain.gain.exponentialRampToValueAtTime(.001,now+.17);
-      osc.connect(gain);gain.connect(audio.destination);osc.start(now);osc.stop(now+.17);
-    }catch(e){/* Sound is optional. */}
+  function current(){return L.chapter(chapterIndex);}
+  function showToast(text){toast.textContent=text;toast.classList.toggle('hidden',!text);}
+  function setPhase(p){phase=p;elapsed=0;nextMove=0;updateJournal();}
+  function clearTimer(){decisionActive=false;decisionPaused=false;timerEl.classList.add('hidden');timerEl.setAttribute('aria-hidden','true');pauseBtn.textContent='Ⅱ PAUSE';}
+  function renderTimer(){
+    const seconds=Math.max(0,Math.ceil(decisionLeft));
+    timerNumber.textContent=String(seconds).padStart(2,'0');
+    timerFill.style.width=`${Math.max(0,decisionLeft)/L.DECISION_SECONDS*100}%`;
+    timerEl.classList.toggle('urgent',decisionLeft<=3);
+    timerEl.classList.toggle('paused',decisionPaused);
+    pauseBtn.textContent=decisionPaused?'▶ RESUME':'Ⅱ PAUSE';
+    pauseBtn.setAttribute('aria-pressed',String(decisionPaused));
+    pauseBtn.setAttribute('aria-label',decisionPaused?'Resume 10-second decision timer':'Pause 10-second decision timer');
   }
+  function beginTimer(){decisionLeft=L.DECISION_SECONDS;decisionActive=true;decisionPaused=false;timerEl.classList.remove('hidden');timerEl.setAttribute('aria-hidden','false');renderTimer();music.setTension(.4);}
+  function pauseTimer(force){if(!decisionActive)return;decisionPaused=typeof force==='boolean'?force:!decisionPaused;renderTimer();if(decisionPaused)music.stop();else music.start();}
+  function openDialogue(name,text,choices,{timed=false,dark=false}={}){
+    clearTimer();dialogueOpen=true;speakerEl.textContent=name;dialogueText.textContent=text;actionsEl.replaceChildren();choiceButtons=[];
+    dialogue.classList.toggle('dark',dark);
+    choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn'+(c.primary?' primary':'');btn.textContent=`${i+1}. ${c.text}`;
+      btn.addEventListener('click',()=>{if(!dialogueOpen)return;music.effect('click');c.onClick();});actionsEl.appendChild(btn);choiceButtons.push(btn);});
+    dialogue.classList.remove('hidden');
+    if(timed)beginTimer();
+  }
+  function closeDialogue(){clearTimer();dialogueOpen=false;dialogue.classList.add('hidden');actionsEl.replaceChildren();choiceButtons=[];}
+  function setChapter(idx){
+    chapterIndex=Math.max(0,Math.min(L.CHAPTERS.length-1,idx));
+    player={x:8,y:11,dir:'down'};lucas={x:12,y:11};maya={x:11,y:10};
+    seenMaya=false;noticedRoad=false;hasReached=false;ending=null;wasTimeout=false;busY=-5;impactFlash=0;screenShake=0;
+    closeDialogue();overlay.innerHTML='';showToast('');
+    music.setTrack(current().music);
+    updateJournal();
+  }
+  const overlayTemplates={
+    title:()=>`<div class="overlay-card dark-bubble"><span class="tiny">✳ DETOUR / THREE CHAPTERS</span><h3>DETOUR<span style="color:#e9b879">.</span></h3><p>Explore Westside, make your own choices, and see what happens next. You have <strong>10 seconds</strong> when the pressure is on. You can pause the timer at any point.</p><div class="buttons"><button class="pixel-btn" data-action="start">▶ START ADVENTURE</button></div></div>`,
+    gameover:()=>{
+      const messages=[
+        wasTimeout?"While you hesitate, Lucas steps forward and you instinctively follow. A school bus strikes your character. The scene cuts before showing injuries.":"You follow Lucas into the road. A school bus strikes your character. The scene cuts before showing injuries.",
+        wasTimeout?"No one intervenes before the photo is forwarded by someone else. Amine is upset and asks for help. The people sharing the image are responsible for their actions.":"The photo spreads beyond the group. Amine is humiliated and trust is damaged. The people who shared it are responsible for that harm.",
+        wasTimeout?"The group moves ahead before anyone suggests another plan. Someone slips while climbing and an adult calls for help. You are not responsible for other people's actions.":"A friend loses their footing during the climb. The scene cuts away as others call for help. One possibility, not an inevitable outcome."
+      ];
+      const lessons=["WHAT OTHER ROUTE COULD YOU TAKE?","HOW COULD YOU SUPPORT THE PERSON TARGETED?","HOW COULD YOU SET A BOUNDARY OR OFFER AN ALTERNATIVE?"];
+      return `<div class="overlay-card dark-bubble"><span class="tiny" style="color:#f0c3ac">✱ ${wasTimeout?'TIME RAN OUT':'A DIFFICULT OUTCOME'}</span><h3>${chapterIndex===1?'THE PHOTO SPREADS':chapterIndex===2?'AN ACCIDENT':'GAME OVER'}</h3><p>${messages[chapterIndex]}</p><p class="ending-stat">${lessons[chapterIndex]}</p><div class="buttons"><button class="pixel-btn" data-action="retry">↶ RETRY DECISION</button><button class="pixel-btn secondary" data-action="reset">RESTART</button></div></div>`;
+    },
+    complete:()=>{
+      const messages=[
+        'The group reaches the skatepark. Lucas grumbles, but you made a plan together. An alternative can keep the group moving.',
+        ending==='boundary'?'Some friends call you dramatic for refusing. Maya quietly backs you up. Amine has room to ask for support. Setting a boundary can feel awkward.':'You check on Amine and bring the situation to a trusted adult. It may take time to resolve, but Amine knows someone cares.',
+        ending==='boundary'?'You stay off the closed structure. A friend teases you, but you can keep your boundary without needing their approval.':'You suggest a ground-level shot with a dramatic angle. Some friends join you; others need more convincing. Nobody has to climb.'
+      ];
+      const isLast=chapterIndex===L.CHAPTERS.length-1;
+      return `<div class="overlay-card dark-bubble"><span class="tiny">✳ CHAPTER ${String(chapterIndex+1).padStart(2,'0')} COMPLETE</span><h3>${isLast?'ADVENTURE COMPLETE!':'CHAPTER CLEARED!'}</h3><p>${messages[chapterIndex]}</p><p class="ending-stat">YOUR CHOICE WAS ONE POSSIBLE WAY FORWARD.</p><div class="buttons">${!isLast?'<button class="pixel-btn" data-action="next">▶ NEXT CHAPTER</button>':'<button class="pixel-btn" data-action="reset">↻ NEW ADVENTURE</button>'}<button class="pixel-btn secondary" data-action="retry">↶ REPLAY THIS CHOICE</button></div></div>`;
+    }
+  };
   function showOverlay(type){
-    const templates={
-      title:`<div class="overlay-card"><span class="tiny">✳ CHAPTER 01 / WESTSIDE</span><h3>DETOUR<span style="color:#e9b879">.</span></h3><p>Friday. 4:32 PM. School's out, and the skatepark is calling. One neighborhood. A lot of ways to get there.</p><div class="buttons"><button class="pixel-btn" data-action="start">▶ START ADVENTURE</button></div></div>`,
-      gameover:`<div class="overlay-card"><span class="tiny" style="color:#e7b39c">✱ AN UNEXPECTED ENDING</span><h3>GAME OVER</h3><p>A school bus strikes your character at the crossing. The screen fades before showing injuries.</p><p class="ending-stat">WHAT DID YOU NOTICE BEFORE CROSSING?</p><div class="buttons"><button class="pixel-btn" data-action="retry">↶ TRY ANOTHER CHOICE</button><button class="pixel-btn secondary" data-action="reset">RESTART</button></div></div>`,
-      complete:`<div class="overlay-card"><span class="tiny">✳ CHAPTER COMPLETE</span><h3>YOU MADE IT!</h3><p>The skatepark is buzzing. Lucas was impatient, but you found a way across together. Some choices take courage, not just time.</p><p class="ending-stat">DISCOVERY: AN ALTERNATIVE CAN KEEP THE GROUP TOGETHER.</p><div class="buttons"><button class="pixel-btn" data-action="retry">↶ EXPLORE ANOTHER ENDING</button><button class="pixel-btn secondary" data-action="reset">NEW GAME</button></div></div>`
-    };
-    overlay.innerHTML=templates[type]||'';
+    overlay.innerHTML=overlayTemplates[type]?.()||'';
     overlay.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>{
-      const action=b.dataset.action;
-      if(action==='start') start(); if(action==='retry') retry();if(action==='reset') reset();
+      const a=b.dataset.action;
+      if(a==='start')start();else if(a==='retry')retry();else if(a==='reset')reset();else if(a==='next')nextChapter();
     }));
   }
-  function setPhase(p){phase=p; elapsed=0; nextMove=0; updateJournal();}
   function updateJournal(){
-    const p=phase;
-    const states={explore:['active','',''],decision:['done','active',''],danger:['done','done','active'],safe:['done','done','active'],gameover:['done','done','done'],complete:['done','done','done'],title:['active','','']};
-    const stage=states[p]||states.explore;
-    ['explore','decide','reflect'].forEach((id,i)=>{
-      const el=document.getElementById('stage-'+id);el.className='quest-stage '+stage[i];el.querySelector('.stage-check').textContent=stage[i]==='done'?'✓':stage[i]==='active'?'●':'○';
-    });
-    const notes={title:'Look around. Talk to people. Sometimes the details matter more than you think.',explore:'Find Lucas near the school gates. Walk with WASD or arrow keys. Press E near someone to talk.',decision:'Listen to everyone, look for clues, and make your own choice.',danger:'You followed Lucas toward the road. Watch what happens...',safe:'You suggested a different plan. Let’s see how the group responds.',gameover:'A collision is one possible consequence, not an inevitable result. Could you recognize a warning sign earlier?',complete:'You found an alternative without abandoning the group. Explore another choice to see how it might unfold.'};
-    fieldNote.textContent=notes[p];
-    statusEl.textContent={title:'PRESS START TO BEGIN YOUR DAY',explore:'EXPLORE THE WORLD · FIND LUCAS',decision:'A DECISION IS WAITING',danger:'CONSEQUENCES UNFOLDING...',safe:'HEADING TO THE SKATEPARK...',gameover:'CHECKPOINT AVAILABLE · TRY AGAIN',complete:'CHAPTER 01 CLEARED · REPLAY AVAILABLE'}[p];
-    sceneLabel.textContent=['danger','gameover'].includes(p)?'EPISODE 01: THE CONSEQUENCE':'EPISODE 01: THE SHORTCUT';
+    const data=current();
+    document.querySelector('.edition').innerHTML=`PIXEL ADVENTURE <span class="edition-divider">/</span> CHAPTER ${String(chapterIndex+1).padStart(2,'0')}`;
+    chapterNumber.textContent=`NO. ${String(chapterIndex+1).padStart(3,'0')}`;
+    questTitle.textContent=data.title;
+    questDetail.textContent=data.prompt;
+    sceneLabel.textContent=`EPISODE ${String(chapterIndex+1).padStart(2,'0')}: ${data.title.toUpperCase()}`;
+    const states={title:['active','',''],explore:['active','',''],decision:['done','active',''],danger:['done','done','active'],safe:['done','done','active'],gameover:['done','done','done'],complete:['done','done','done']};
+    const state=states[phase]||states.explore;
+    ['explore','decide','reflect'].forEach((id,i)=>{const el=document.getElementById('stage-'+id);el.className='quest-stage '+state[i];el.querySelector('.stage-check').textContent=state[i]==='done'?'✓':state[i]==='active'?'●':'○';});
+    const notes={title:'Each chapter explores social pressure and safety. Every outcome is fictional, and you can always retry.',explore:'Explore the neighborhood. Use arrow keys/WASD to move and E or Space to talk to friends.',decision:'10 seconds to decide. Press 1, 2 or 3, or click an option. You can pause the timer.',danger:'Watch what unfolds. Consequences are one possible outcome, not a prediction.',safe:'Your choice changes the scene and how friends respond.',gameover:'A hard outcome is a chance to explore another response, not a judgment of you.',complete:'You completed this chapter. Try a different choice or move to the next scenario.'};
+    fieldNote.textContent=notes[phase];
+    statusEl.textContent={title:'PRESS START TO BEGIN YOUR DAY',explore:`EXPLORE · ${data.quest.toUpperCase()}`,decision:'DECIDE · YOU CAN PAUSE (P)',danger:'CONSEQUENCES UNFOLDING…',safe:'THE STORY CONTINUES…',gameover:'CHECKPOINT AVAILABLE · TRY AGAIN',complete:'CHAPTER CLEARED · CONTINUE OR REPLAY'}[phase];
   }
-  function reset(){player={x:8,y:11,dir:'down'};lucas={x:12,y:11};maya={x:11,y:10};seenMaya=false;noticedRoad=false;hasReached=false;busY=-5;impactFlash=0;screenShake=0;closeDialogue();setPhase('title');showOverlay('title');}
-  function start(){overlay.innerHTML='';setPhase('explore');sound('click');}
-  function retry(){player={x:13,y:11,dir:'right'};lucas={x:12,y:11};busY=-5;impactFlash=0;screenShake=0;hasReached=false;overlay.innerHTML='';setPhase('decision');openCrossroadDialogue();sound('click');}
-  function openDialogue(name,text,choices){
-    dialogueOpen=true;speakerEl.textContent=name;dialogueText.textContent=text;actionsEl.replaceChildren();
-    choices.forEach(c=>{const btn=document.createElement('button');btn.className='choice-btn'+(c.primary?' primary':'');btn.textContent=c.text;btn.addEventListener('click',()=>{sound('click');c.onClick();});actionsEl.appendChild(btn);});
-    dialogue.classList.remove('hidden');
+  function reset(){music.stop();setChapter(0);setPhase('title');showOverlay('title');}
+  function start(){overlay.innerHTML='';setPhase('explore');music.start();music.effect('click');}
+  function nextChapter(){music.stop();setChapter(chapterIndex+1);setPhase('explore');music.start();}
+  function retry(){
+    closeDialogue();overlay.innerHTML='';showToast('');busY=-5;impactFlash=0;screenShake=0;hasReached=false;ending=null;wasTimeout=false;
+    player={x:13,y:11,dir:'right'};
+    music.setTrack(current().music);music.start();openChallenge();
   }
-  function closeDialogue(){dialogue.classList.add('hidden');dialogueOpen=false;actionsEl.replaceChildren();}
-  function openCrossroadDialogue(){
+  function openChallenge(){
     setPhase('decision');
-    const intro=seenMaya?"Lucas: 'Come on, the skatepark's right across the road. What do you think?'":"Lucas: 'The skatepark is right there! Let's cut across. Everyone's waiting!'";
-    openDialogue('LUCAS',intro,[
-      {text:'Follow Lucas across',onClick:()=>beginDanger()},
-      {text:'Suggest the marked crossing',onClick:()=>beginSafe(),primary:true},
-      {text:'Ask Maya what she thinks',onClick:()=>askMaya()}
-    ]);
+    if(chapterIndex===0){
+      const intro=seenMaya?"Lucas: 'The skatepark is right across the road. What do you think?'":"Lucas: 'Let's cut across the road! Everyone's waiting. Come on!'";
+      openDialogue('LUCAS',intro,[
+        {text:'Follow Lucas across',onClick:()=>resolve('follow')},
+        {text:'Suggest the marked crossing',onClick:()=>resolve('cross'),primary:true},
+        {text:'Ask Maya what she thinks',onClick:()=>askMaya()}
+      ],{timed:true});
+    }else if(chapterIndex===1){
+      openDialogue('LUCAS',"'Look at this photo of Amine! Send it to the group. It's hilarious!' Maya looks uncomfortable.",[
+        {text:'Forward the photo',onClick:()=>resolve('share')},
+        {text:'Refuse and ask them to stop',onClick:()=>resolve('refuse'),primary:true},
+        {text:'Check on Amine and seek help',onClick:()=>resolve('support')}
+      ],{timed:true,dark:true});
+    }else{
+      openDialogue('NOAH',"'Climb up for the perfect photo!' Lina looks at the CLOSED sign. 'Are you sure?'",[
+        {text:'Climb with the group',onClick:()=>resolve('climb')},
+        {text:'Stay on the ground',onClick:()=>resolve('stay'),primary:true},
+        {text:'Suggest a ground-level shot',onClick:()=>resolve('alternative')}
+      ],{timed:true,dark:true});
+    }
   }
   function askMaya(){seenMaya=true;noticedRoad=true;
-    openDialogue('MAYA',"'There's a crossing a little further down. And that parked van makes it hard to see what's coming. I wasn't sure how to say it.'",[
-      {text:'Suggest the crossing together',onClick:()=>beginSafe(),primary:true},
-      {text:'Still follow Lucas',onClick:()=>beginDanger()},
-      {text:'Back to Lucas',onClick:()=>openCrossroadDialogue()}
-    ]);
+    openDialogue('MAYA',"'That van blocks our view of traffic. There's a marked crossing further down. I wasn't sure how to say it.'",[
+      {text:'Suggest the crossing together',onClick:()=>resolve('cross'),primary:true},
+      {text:'Still follow Lucas',onClick:()=>resolve('follow')},
+      {text:'Back to Lucas',onClick:()=>openChallenge()}
+    ],{timed:true});
   }
-  function beginDanger(){closeDialogue();setPhase('danger');busY=-5;sound('danger');}
-  function beginSafe(){closeDialogue();setPhase('safe');sound('win');}
+  function resolve(choice,timedOut=false){
+    const out=timedOut?L.timeoutOutcome(current().id):L.outcomeFor(current().id,choice);
+    if(!out||out==='new-information')return;
+    ending=out;wasTimeout=timedOut;
+    closeDialogue();overlay.innerHTML='';hasReached=false;
+    setPhase(L.isCritical(out)?'danger':'safe');
+    music.setTension(L.isCritical(out)?1:0);
+    if(timedOut){showToast(chapterIndex===0?'TIME UP! THE GROUP MOVES TOWARD THE ROAD…':chapterIndex===1?'TIME UP! SOMEONE ELSE SENDS THE PHOTO…':'TIME UP! THE GROUP CLIMBS WITHOUT A PLAN…');}
+    else if(L.isCritical(out))showToast(chapterIndex===0?'LUCAS RUNS INTO THE ROAD…':chapterIndex===1?'THE IMAGE IS FORWARDED…':'THE GROUP STARTS CLIMBING…');
+    else showToast(chapterIndex===0?'YOU SUGGEST THE MARKED CROSSING.':chapterIndex===1?'YOUR CHOICE CHANGES THE CONVERSATION.':'YOU CHOOSE YOUR OWN WAY FORWARD.');
+  }
+  function onDecisionTimeout(){if(!decisionActive||decisionPaused)return;resolve('timeout',true);}
   function interact(){
     if(phase==='title'){start();return;}
     if(dialogueOpen||['danger','safe','gameover','complete'].includes(phase))return;
-    if(phase==='decision'){openCrossroadDialogue();return;}
-    if(L.inRange(player,{x:12,y:11},2)){openCrossroadDialogue();return;}
-    if(L.inRange(player,{x:11,y:10},2)){openDialogue('MAYA',"'Hey! Lucas really wants to get to the skatepark. I saw a school bus heading this way earlier.'",[{text:'Thanks! Find Lucas',onClick:()=>{seenMaya=true;noticedRoad=true;closeDialogue();}}]);return;}
-    if(L.inRange(player,{x:13,y:14},2)){noticedRoad=true;openDialogue('STREET SIGN','PEDESTRIAN CROSSING → 40 m. Traffic may be hidden by parked vehicles.',[{text:'Got it',onClick:closeDialogue}]);return;}
-    openDialogue('EXPLORER',"Look for the friend with the orange exclamation mark near the school gates.",[{text:'Continue',onClick:closeDialogue}]);
+    if(phase==='decision'){openChallenge();return;}
+    const meeting=current().target;
+    if(L.inRange(player,meeting,2)){openChallenge();return;}
+    if(chapterIndex===0&&L.inRange(player,{x:11,y:10},2)){
+      openDialogue('MAYA',"'I saw a school bus earlier. I wonder if we should use the proper crossing.'",[{text:'Thanks! Find Lucas',onClick:()=>{seenMaya=true;noticedRoad=true;closeDialogue();}}]);return;
+    }
+    if(chapterIndex===0&&L.inRange(player,{x:13,y:14},2)){
+      noticedRoad=true;openDialogue('STREET SIGN','PEDESTRIAN CROSSING → 40 m. Traffic may be hidden by parked vehicles.',[{text:'Got it',onClick:closeDialogue}]);return;
+    }
+    openDialogue('EXPLORER',chapterIndex===0?'Find Lucas near the school gates.':'Find the group marked with an exclamation point.',[{text:'Continue exploring',onClick:closeDialogue}],{dark:chapterIndex>0});
   }
   function attemptMove(dx,dy){
     if(phase!=='explore'||dialogueOpen)return;
     const nx=player.x+dx,ny=player.y+dy;
     player.dir=dx>0?'right':dx<0?'left':dy<0?'up':'down';
-    if(L.canWalk(nx,ny) && !(nx===lucas.x&&ny===lucas.y) && !(nx===maya.x&&ny===maya.y)){player.x=nx;player.y=ny;}
-    if(player.x>=13&&player.y<=13&&player.y>=9){statusEl.textContent='NEAR THE ROAD · TALK TO LUCAS';}
+    if(L.canWalk(nx,ny,chapterIndex)&&!(nx===lucas.x&&ny===lucas.y)&&!(chapterIndex===0&&nx===maya.x&&ny===maya.y)){player.x=nx;player.y=ny;}
+    if(L.inRange(player,current().target,2))statusEl.textContent='NEAR FRIENDS · PRESS E TO TALK';
   }
   function keyToDir(k){return {arrowup:[0,-1],w:[0,-1],arrowdown:[0,1],s:[0,1],arrowleft:[-1,0],a:[-1,0],arrowright:[1,0],d:[1,0]}[k];}
   window.addEventListener('keydown',e=>{
     const k=e.key.toLowerCase();
-    if(keyToDir(k)||k===' '||k==='e'||k==='r')e.preventDefault();
-    if(k==='r'){reset();return;}
+    if(keyToDir(k)||[' ','e','r','p','1','2','3'].includes(k))e.preventDefault();
+    if(k==='p'&&decisionActive){pauseTimer();return;}
+    if(k==='r'&&!e.repeat){reset();return;}
+    if(dialogueOpen&&['1','2','3'].includes(k)){choiceButtons[Number(k)-1]?.click();return;}
     if(k==='e'||k===' '){if(!e.repeat)interact();return;}
-    if(keyToDir(k)){keys.add(k);if(!e.repeat){const dir=keyToDir(k);attemptMove(...dir);nextMove=performance.now()+135;}}
+    if(keyToDir(k)){keys.add(k);if(!e.repeat){attemptMove(...keyToDir(k));nextMove=performance.now()+135;}}
   });
   window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-  window.addEventListener('blur',()=>keys.clear());
+  window.addEventListener('blur',()=>{keys.clear();if(decisionActive)pauseTimer(true);});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&decisionActive)pauseTimer(true);});
   const touchTimers=new Map();
   document.querySelectorAll('[data-dir]').forEach(b=>{
     const dirs={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};const go=()=>attemptMove(...dirs[b.dataset.dir]);
@@ -120,8 +200,8 @@
   });
   document.getElementById('touch-interact').addEventListener('click',interact);
   document.getElementById('restart-btn').addEventListener('click',reset);
-  document.getElementById('mute-btn').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('mute-btn').textContent=soundOn?'♫':'♪̸';document.getElementById('mute-btn').setAttribute('aria-label',soundOn?'Mute sound':'Unmute sound');sound('click');});
-
+  pauseBtn.addEventListener('click',()=>pauseTimer());
+  document.getElementById('mute-btn').addEventListener('click',()=>{const enabled=music.toggle();const b=document.getElementById('mute-btn');b.textContent=enabled?'♫':'♪̸';b.setAttribute('aria-label',enabled?'Mute music':'Unmute music');b.title=enabled?'Mute music':'Unmute music';});
   // ALL ART BELOW IS DRAWN FROM CODE: original tiles, characters and vehicles, no copyrighted assets.
   function ground(){
     px(0,0,W,H,pal.grass);
@@ -225,47 +305,94 @@
     const xx=x*T+9,yy=y*T-14+Math.sin(elapsed*3)*2;
     px(xx-6,yy-2,14,12,'#324b52');px(xx-5,yy-3,12,11,bg);label(text,xx+1,yy+5,'#283e45',10);
   }
+  // Different original locations keep exploration visually distinct in each chapter.
+  function courtyard(){
+    px(0,0,W,H,'#8aa891');
+    for(let y=0;y<20;y++)for(let x=0;x<30;x++){
+      if(x>8&&x<23&&y>5&&y<17)tile(x,y,(x+y)%2?'#c7c6b5':'#d6d2bd');
+      else if(rand(x,y)<23)px(x*T+4,y*T+9,2,2,'#a6c39c');
+    }
+    building(2,2,8,6,'school');building(21,2,8,6,'shop');building(22,15,7,5,'house');
+    for(const [x,y] of [[2,11],[4,14],[26,10],[27,13],[13,3]])tree(x,y);
+    // School notice board, benches, basketball court, and bike rack
+    px(11*T,4*T,43,31,'#658078');px(11*T+3,4*T+4,37,22,'#f2dec0');px(11*T+7,4*T+7,10,8,'#d58f75');px(11*T+22,4*T+7,12,13,'#9dc4b6');
+    for(const [x,y] of [[7,11],[21,12]]){px(x*T,y*T+5,36,6,'#8b6551');px(x*T+3,y*T+11,3,8,'#3f5458');px(x*T+30,y*T+11,3,8,'#3f5458');}
+    px(16*T,14*T,4*T,2*T,'#a2bbab');px(17*T,14*T,3,2*T,'#faf2d3');
+    label('COURTYARD',239,32,'#fff2c6',9);
+  }
+  function plaza(){
+    px(0,0,W,H,'#7f9c83');
+    for(let y=0;y<20;y++)for(let x=0;x<30;x++){
+      if(x>7&&x<22&&y>5&&y<18)tile(x,y,(x+y)%2?'#c4bcaa':'#d7ccaf');
+      else if(rand(x,y)<23)px(x*T+5,y*T+5,2,2,'#9ab495');
+    }
+    building(1,2,9,6,'shop');building(21,2,8,7,'house');
+    for(const [x,y] of [[2,12],[4,17],[25,11],[26,13],[12,3]])tree(x,y);
+    // Closed raised structure in the upper-right. The player never freely climbs it.
+    px(21*T,10*T,7*T,4*T,'#485b5d');px(22*T,10*T+4,5*T,3*T,'#b9aba0');
+    for(let j=0;j<3;j++)px(22*T+10+j*25,10*T+4,13,6,'#65878b');
+    px(21*T,10*T,7*T,3,'#e4b56d');px(21*T+4,10*T+5,7,22,'#ecb96d');
+    px(20*T,13*T,16,14,'#e1cf9c');label('CLOSED',22*T+50,12*T+10,'#fff0ca',8);
+    for(let i=0;i<6;i++)px(21*T+i*19,10*T-2,8,5,'#e3bb70');
+    label('PLAZA',224,39,'#f6f2cb',9);
+    // Ground level photo spot: flowers and wall mural.
+    px(4*T,11*T,3*T,3*T,'#648d87');for(let i=0;i<8;i++)px(4*T+6+i*5,11*T+10+(i%3)*8,3,4,i%2?'#e3b879':'#d991a8');
+  }
+  function phone(x,y){px(x,y,18,25,'#263f51');px(x+2,y+2,14,19,'#c5b8d1');px(x+5,y+6,8,5,'#6d8f8c');px(x+8,y+22,3,2,'#dcd7c5');}
   function paintWorld(){
-    ctx.save(); if(screenShake>0){ctx.translate(Math.floor(Math.sin(elapsed*40)*screenShake),Math.floor(Math.cos(elapsed*53)*screenShake));}
-    ground();streetObjects(elapsed);
+    ctx.save();if(screenShake>0)ctx.translate(Math.floor(Math.sin(elapsed*40)*screenShake),Math.floor(Math.cos(elapsed*53)*screenShake));
+    if(chapterIndex===0){ground();streetObjects(elapsed);}else if(chapterIndex===1)courtyard();else plaza();
     const risky=phase==='danger',safe=phase==='safe';
-    let pxp=player.x,pyp=player.y,lx=lucas.x,ly=lucas.y;
-    if(risky){
-      const t=elapsed;
-      // The player follows Lucas onto the road. School bus approaches at an unsignaled point.
-      pxp=13+Math.min(3.3,t*2.35);pyp=10;lx=13+Math.min(3.5,t*2.6);ly=9.3;
-      busY=-5+Math.max(0,t-.5)*7.5;
-      drawBus(16.1,busY);
-    } else if(safe){
-      const t=elapsed;
-      if(t<1.55){pxp=13;pyp=11+Math.min(3,t*1.95);lx=13;ly=10+Math.min(4,t*2.6);}
-      else if(t<3.5){pxp=13+(t-1.55)*3.5;pyp=14;lx=13+(t-1.55)*3.3;ly=13.3;}
-      else {pxp=19.8+Math.min(4,(t-3.5)*3);pyp=14;lx=19.5+Math.min(4,(t-3.5)*3);ly=13.2;}
-      drawBus(16.1,Math.max(-5,-5+t*2.3));
-    } else if(phase==='explore'||phase==='decision'){drawBus(16.1,-4+(Math.sin(elapsed*.4)+1)*.2);}
-    if(!safe){person(maya.x,maya.y,'#9871b0','#45334b');}
-    person(lx,ly,'#d98c5e','#4f3b31',risky||safe);
-    person(pxp,pyp,'#5b9cb4','#3c3447',risky||safe,player.dir);
-    if(phase==='explore' && !dialogueOpen){npcBubble(12,11,'!');}
-    if(phase==='explore' && L.inRange(player,{x:12,y:11},2)){label('E · TALK',12*T,10*T+6,'#fff5d6',8);}
-    if(phase==='safe' && elapsed>3.4){label('SKATEPARK',25*T,13*T,'#fff4db',8);}
-    if(phase==='danger' && elapsed>=2.15){px(0,0,W,H,'#fbe6bd');}
+    if(chapterIndex===0){
+      let pxp=player.x,pyp=player.y,lx=lucas.x,ly=lucas.y;
+      if(risky){const t=elapsed;pxp=13+Math.min(3.3,t*2.35);pyp=10;lx=13+Math.min(3.5,t*2.6);ly=9.3;busY=-5+Math.max(0,t-.5)*7.5;drawBus(16.1,busY);}
+      else if(safe){const t=elapsed;if(t<1.55){pxp=13;pyp=11+Math.min(3,t*1.95);lx=13;ly=10+Math.min(4,t*2.6);}else if(t<3.5){pxp=13+(t-1.55)*3.5;pyp=14;lx=13+(t-1.55)*3.3;ly=13.3;}else{pxp=19.8+Math.min(4,(t-3.5)*3);pyp=14;lx=19.5+Math.min(4,(t-3.5)*3);ly=13.2;}drawBus(16.1,Math.max(-5,-5+t*2.3));}
+      else if(phase==='explore'||phase==='decision')drawBus(16.1,-4+(Math.sin(elapsed*.4)+1)*.2);
+      if(!safe)person(maya.x,maya.y,'#9871b0','#45334b');
+      person(lx,ly,'#d98c5e','#4f3b31',risky||safe);
+      person(pxp,pyp,'#5b9cb4','#3c3447',risky||safe,player.dir);
+    }else if(chapterIndex===1){
+      person(11,10,'#9871b0','#45334b'); // Maya
+      person(14,13,'#599a84','#4d392e'); // Amine
+      person(12,11,'#d98c5e','#4f3b31'); // Lucas
+      person(phase==='explore'?player.x:13,phase==='explore'?player.y:11,'#5b9cb4','#3c3447',false,player.dir);
+      if(risky){for(let i=0;i<7;i++){const a=elapsed*90+i*74;phone(235+Math.sin(i*3)*a*.3,110+Math.cos(i*5)*a*.12);}}
+      else if(safe){label('...',14*T+12,12*T+1,'#eaf8cf',10);}
+      if(phase==='decision'||phase==='explore')phone(12*T+13,11*T-14);
+    }else{
+      person(11,10,'#a58fbb','#46383f'); // Lina
+      person(12,11,'#d98c5e','#4f3b31'); // Noah
+      person(phase==='explore'?player.x:13,phase==='explore'?player.y:11,'#5b9cb4','#3c3447',false,player.dir);
+      if(risky){
+        const x=22+Math.min(3,elapsed*1.4),y=10-Math.min(2,elapsed*.6);
+        person(x,y,'#e8a470','#513c36',true);
+        if(elapsed>1.7){px(x*T-2,y*T-3,24,4,'#f1ce92');}
+      }else if(safe){label(ending==='alternative'?'PHOTO!':'BOUNDARY',24*T,15*T,'#f8f2d5',8);}
+    }
+    if(phase==='explore'&&!dialogueOpen){npcBubble(12,11,'!');if(L.inRange(player,current().target,2))label('E · TALK',12*T,10*T+6,'#fff5d6',8);}
+    if(chapterIndex===0&&phase==='safe'&&elapsed>3.4)label('SKATEPARK',25*T,13*T,'#fff4db',8);
+    if(phase==='danger'&&elapsed>=2.15)px(0,0,W,H,'#fbe6bd');
     if(impactFlash>0){ctx.fillStyle=`rgba(255,239,196,${Math.min(.92,impactFlash)})`;ctx.fillRect(0,0,W,H);}
     ctx.restore();
-    // HUD
-    px(7,7,151,20,'#203d49e9');px(9,9,3,15,'#e7bd77');
-    ctx.fillStyle='#f5edcc';ctx.textAlign='left';ctx.font='bold 8px monospace';ctx.fillText('WESTSIDE  /  FRI 4:32 PM',17,20);
-    if(phase==='explore'){px(370,7,101,20,'#203d49e9');ctx.fillStyle='#f2dfaa';ctx.fillText('FIND LUCAS  →',379,20);}
+    px(7,7,188,20,'#203d49e9');px(9,9,3,15,'#e7bd77');
+    ctx.fillStyle='#f5edcc';ctx.textAlign='left';ctx.font='bold 8px monospace';
+    ctx.fillText(`${current().location} / CHAPTER ${chapterIndex+1} OF 3`,17,20);
+    if(phase==='explore'){px(368,7,105,20,'#203d49e9');ctx.fillStyle='#f2dfaa';ctx.fillText('FIND FRIENDS →',376,20);}
   }
   function tick(now){
-    if(!last)last=now;const dt=Math.min((now-last)/1000,.05);last=now;
-    if(phase!=='title' && !dialogueOpen)elapsed+=dt;
+    if(!last)last=now;
+    const dt=Math.min((now-last)/1000,.05);last=now;
+    if(phase!=='title'&&!dialogueOpen)elapsed+=dt;
     if(phase==='explore'&&!dialogueOpen&&now>nextMove){for(const k of keys){const dir=keyToDir(k);if(dir){attemptMove(...dir);nextMove=now+130;break;}}}
-    if(phase==='danger' && elapsed>=2.15 && !hasReached){
-      hasReached=true;impactFlash=.94;screenShake=5;sound('danger');
+    if(decisionActive&&!decisionPaused){
+      decisionLeft=Math.max(0,decisionLeft-dt);
+      music.setTension(.35+(1-decisionLeft/L.DECISION_SECONDS)*.65);
+      renderTimer();
+      if(decisionLeft===0)onDecisionTimeout();
     }
-    if(phase==='danger' && elapsed>2.8){crashCount++;setPhase('gameover');showOverlay('gameover');}
-    if(phase==='safe' && elapsed>5.1){setPhase('complete');showOverlay('complete');sound('win');}
+    if(phase==='danger'&&elapsed>=2.15&&!hasReached){hasReached=true;impactFlash=.94;screenShake=5;music.effect('impact');}
+    if(phase==='danger'&&elapsed>3){showToast('');setPhase('gameover');music.stop();showOverlay('gameover');}
+    if(phase==='safe'&&elapsed>(chapterIndex===0?5.1:3.2)){showToast('');setPhase('complete');music.effect('win');music.stop();showOverlay('complete');}
     screenShake=Math.max(0,screenShake-dt*9);impactFlash=Math.max(0,impactFlash-dt*1.5);
     paintWorld();requestAnimationFrame(tick);
   }

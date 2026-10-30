@@ -2,6 +2,8 @@
   'use strict';
   const L=window.DetourLogic;
   const music=window.DetourMusic;
+  const Cine=window.DetourCinematics;
+  const reducedMotion=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const canvas=document.getElementById('game-canvas');
   const ctx=canvas.getContext('2d',{alpha:false});
   if(!ctx){document.getElementById('screen-overlay').textContent='Your browser does not support Canvas.';return;}
@@ -52,21 +54,21 @@
     'safe-arrival':{title:'YOU FOUND YOUR WAY',body:'You head for the marked crossing yourself. Lucas stays behind for a moment. You make it across safely, and you can meet up later.',reflection:'Choosing your own route is an option, even when friends disagree.'},
     'group-crossing':{title:'A PLAN TOGETHER',body:'You ask Lucas and Maya to walk to the crossing with you. Maya agrees, and Lucas follows after a little grumbling. You reach the skatepark together.',reflection:'Inviting others into a safer plan can make it easier to stick together.'},
     mocked:{title:'THAT STUNG',body:'You call Lucas reckless in front of the others and walk away from the road. Lucas snaps back: “Thanks, safety police.” A couple of friends laugh and leave you out of the chat. You are safe, but their reaction hurts.',reflection:'Mockery is their choice, not your fault. You can still set boundaries and find support.'},
-    collision:{title:'GAME OVER',body:'You follow Lucas into the road. A school bus approaches from behind the parked vehicle and strikes your character. The scene cuts away before showing injuries.',reflection:'Traffic can be difficult to see. What could you check or suggest before crossing?'},
+    collision:{title:'BAD END: NO SHORTCUT',body:'You follow Lucas. The bus appears from behind a parked vehicle. HONK! A shoe flies, everything cuts to black, and a friend calls for help.',reflection:'The animation is exaggerated, but the danger is real. What could you notice or suggest before crossing?'},
     reported:{title:'YOU STOP THE SPREAD',body:'You refuse to forward the photo and show it to a trusted adult without redistributing it. The adult takes the situation seriously and checks on Amine.',reflection:'Protecting someone’s privacy and asking for help are meaningful actions.'},
     supported:{title:'YOU ARE NOT ALONE',body:'You talk privately with Maya. Together you check on Amine and ask a trusted adult for help. Amine decides what support he wants next.',reflection:'Cooperation can make it easier for someone targeted by bullying to be heard.'},
     excluded:{title:'LEFT OUT OF THE GROUP',body:'You challenge Lucas loudly for showing the photo. He replies, “What a hero,” and others laugh and exclude you from their group chat. You did not share the picture, and the mockery is their responsibility.',reflection:'Speaking up can bring social pressure. You deserve support too.'},
-    spread:{title:'THE PHOTO SPREADS',body:'You forward the photo. It circulates beyond the group, and Amine faces more harassment. Someone shares personal details alongside it, increasing the risk of targeted abuse.',reflection:'Sharing a humiliating image can seriously harm another person. How could you stop its spread and seek help?'},
+    spread:{title:'BAD END: POSTED FOREVER',body:'One tap. Then a ridiculous avalanche of forwards, screenshots, and jokes. The laughs stop feeling funny when Amine leaves the chat.',reflection:'The joke is on the people who shared it, not the person targeted. How could you help stop the spread?'},
     boundary:{title:'YOU CHOOSE YOUR SPACE',body:'You stay away from the closed structure. Lina also remains below. The group continues discussing the photo, while you keep a safe distance.',reflection:'You can decide not to join a risky activity without controlling anyone else.'},
     alternative:{title:'A BETTER SHOT',body:'You invite Noah and Lina to try a dramatic ground-level angle by the mural. Lina joins immediately, and Noah eventually agrees. The group takes a creative photo without climbing.',reflection:'Cooperation can change the plan while respecting everyone’s independence.'},
     ridiculed:{title:'AN AWKWARD WALK HOME',body:'You tell the group you are leaving and walk away from the structure. Noah calls you a “scaredy-cat,” and a few friends laugh. You are physically safe, but the exclusion feels real.',reflection:'Being mocked does not make your boundary wrong. Others are responsible for their teasing.'},
-    fall:{title:'AN ACCIDENT',body:'You join the climb. A loose foothold gives way and your character falls. The scene cuts to black as a friend calls for help; no injury is shown.',reflection:'Closed structures can present serious hazards. What other ways could you enjoy the moment?'}
+    fall:{title:'BAD END: CLOUT DROP',body:'You climb for the perfect picture. A loose foothold gives way. The phone tumbles away, and a friend urgently calls for help.',reflection:'A closed structure can be genuinely dangerous. The cartoon fall is not a prediction; how else might you get the photo?'}
   };
   const overlayTemplates={
     title:()=>`<div class="overlay-card dark-bubble"><span class="tiny">✳ DETOUR / THREE CHAPTERS</span><h3>DETOUR<span style="color:#e9b879">.</span></h3><p>Explore Westside. Meet friends, make your own choices, and experience how each situation unfolds. <strong>Take all the time you need.</strong></p><div class="buttons"><button class="pixel-btn" data-action="start">▶ START ADVENTURE</button></div></div>`,
     gameover:()=>{
       const info=OUTCOME_TEXT[ending]||OUTCOME_TEXT.collision;
-      return `<div class="overlay-card dark-bubble"><span class="tiny" style="color:#f0c3ac">✱ A SERIOUS CONSEQUENCE</span><h3>${info.title}</h3><p>${info.body}</p><p class="ending-stat">${info.reflection}</p><div class="buttons"><button class="pixel-btn" data-action="retry">↶ RETRY DECISION</button><button class="pixel-btn secondary" data-action="reset">RESTART</button></div></div>`;
+      return `<div class="overlay-card dark-bubble bad-ending"><span class="tiny" style="color:#f0c3ac">✱ PIXEL SHOCK · A SERIOUS CONSEQUENCE</span><h3>${info.title}</h3><p>${info.body}</p><p class="ending-stat">${info.reflection}</p><div class="buttons"><button class="pixel-btn" data-action="retry">↶ RETRY DECISION</button><button class="pixel-btn secondary" data-action="reset">RESTART</button></div></div>`;
     },
     complete:()=>{
       const info=OUTCOME_TEXT[ending]||OUTCOME_TEXT['safe-arrival'];
@@ -335,7 +337,7 @@
   }
   function phone(x,y){px(x,y,18,25,'#263f51');px(x+2,y+2,14,19,'#c5b8d1');px(x+5,y+6,8,5,'#6d8f8c');px(x+8,y+22,3,2,'#dcd7c5');}
   function paintWorld(){
-    ctx.save();if(screenShake>0)ctx.translate(Math.floor(Math.sin(elapsed*40)*screenShake),Math.floor(Math.cos(elapsed*53)*screenShake));
+    ctx.save();if(screenShake>0&&!reducedMotion)ctx.translate(Math.floor(Math.sin(elapsed*40)*screenShake),Math.floor(Math.cos(elapsed*53)*screenShake));
     if(chapterIndex===0){ground();streetObjects(elapsed);}else if(chapterIndex===1)courtyard();else plaza();
     const risky=phase==='danger',safe=['safe','cooperative','social'].includes(phase),group=phase==='cooperative';
     if(chapterIndex===0){
@@ -367,8 +369,8 @@
     }
     if(phase==='explore'&&!dialogueOpen){npcBubble(12,11,'!');if(L.inRange(player,current().target,2))label('E · TALK',12*T,10*T+6,'#fff5d6',8);}
     if(chapterIndex===0&&phase==='safe'&&elapsed>3.4)label('SKATEPARK',25*T,13*T,'#fff4db',8);
-    if(phase==='danger'&&elapsed>=2.15)px(0,0,W,H,'#fbe6bd');
-    if(impactFlash>0){ctx.fillStyle=`rgba(255,239,196,${Math.min(.92,impactFlash)})`;ctx.fillRect(0,0,W,H);}
+    if(impactFlash>0){ctx.fillStyle=`rgba(239,100,80,${Math.min(.45,impactFlash)})`;ctx.fillRect(0,0,W,H);}
+    if(phase==='danger')Cine.draw(ctx,{ending,time:elapsed,width:W,height:H,reducedMotion});
     ctx.restore();
     px(7,7,188,20,'#203d49e9');px(9,9,3,15,'#e7bd77');
     ctx.fillStyle='#f5edcc';ctx.textAlign='left';ctx.font='bold 8px monospace';
@@ -380,8 +382,8 @@
     const dt=Math.min((now-last)/1000,.05);last=now;
     if(phase!=='title'&&!dialogueOpen)elapsed+=dt;
     if(phase==='explore'&&!dialogueOpen&&now>nextMove){for(const k of keys){const dir=keyToDir(k);if(dir){attemptMove(...dir);nextMove=now+130;break;}}}
-    if(phase==='danger'&&elapsed>=2.15&&!hasReached){hasReached=true;impactFlash=.94;screenShake=5;music.effect('impact');}
-    if(phase==='danger'&&elapsed>3){showToast('');setPhase('gameover');music.stop();showOverlay('gameover');}
+    if(phase==='danger'&&elapsed>=Cine.impactAt(ending)&&!hasReached){hasReached=true;impactFlash=.65;screenShake=reducedMotion?0:4;music.effect(ending==='spread'?'notification':ending==='collision'?'horn':'crash');}
+    if(phase==='danger'&&elapsed>Cine.durationFor(ending)){showToast('');setPhase('gameover');music.stop();showOverlay('gameover');}
     if(['safe','cooperative','social'].includes(phase)&&elapsed>(chapterIndex===0?5.1:3.2)){showToast('');setPhase('complete');music.effect('win');music.stop();showOverlay('complete');}
     screenShake=Math.max(0,screenShake-dt*9);impactFlash=Math.max(0,impactFlash-dt*1.5);
     paintWorld();requestAnimationFrame(tick);

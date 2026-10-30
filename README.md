@@ -79,3 +79,6 @@ The static project deploys to GitHub Pages from `main` and the repository root. 
 ## License
 
 MIT; see [`LICENSE`](LICENSE).
+## Version 4: comic consequence cinematics
+
+Three original, non-graphic pixel-art cutscenes: a school-bus collision with a flying shoe and exaggerated crash cloud; a rooftop slip with a tumbling phone; and a bullying photo that goes viral until Amine leaves the group chat. The satire is aimed at risky actions and group behavior, not at the victim. Original chiptune stings play with each event. The decision timer remains removed. All CSS and JS asset URLs use `?v=4` to reduce stale caches on GitHub Pages. Reduced-motion preferences disable screen shaking.

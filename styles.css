@@ -31,3 +31,7 @@
 .dialogue-actions .choice-btn{flex:1 1 42%;min-width:120px;white-space:normal;text-wrap:pretty}
 @media(max-width:760px){.dialogue-actions .choice-btn{flex:1 1 42%;min-width:110px;min-height:40px}}
 @media(max-width:420px){.dialogue-actions .choice-btn{flex:1 1 100%;min-height:34px;padding:6px 7px;font-size:10px}.dialogue{max-height:98%;overflow-y:auto}.dialogue::after{display:none}}
+/* v4: readable satirical ending screens. Motion is optional. */
+.overlay-card.bad-ending{border-color:#f0af85;box-shadow:0 8px 0 #0e1721bd,0 0 0 5px #914f48a6}
+.overlay-card.bad-ending h3{color:#ffe0a0;text-wrap:balance}
+.overlay-card.bad-ending .ending-stat{color:#f6c5aa}

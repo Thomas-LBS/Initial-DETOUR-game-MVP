@@ -341,6 +341,7 @@
     if(chapterIndex===0){
       let pxp=player.x,pyp=player.y,lx=lucas.x,ly=lucas.y;
       if(risky){const t=elapsed;pxp=13+Math.min(3.3,t*2.35);pyp=10;lx=13+Math.min(3.5,t*2.6);ly=9.3;busY=-5+Math.max(0,t-.5)*7.5;drawBus(16.1,busY);}
+      else if(phase==='social'){pxp=13-Math.min(3,elapsed*1.15);pyp=11;lx=12;ly=11;label('HA!',12*T+7,9*T+13,'#f6df9c',10);}
       else if(safe){const t=elapsed;if(t<1.55){pxp=13;pyp=11+Math.min(3,t*1.95);lx=group?13:12;ly=group?10+Math.min(4,t*2.6):11;}else if(t<3.5){pxp=13+(t-1.55)*3.5;pyp=14;lx=group?13+(t-1.55)*3.3:12;ly=group?13.3:11;}else{pxp=19.8+Math.min(4,(t-3.5)*3);pyp=14;lx=group?19.5+Math.min(4,(t-3.5)*3):12;ly=group?13.2:11;}drawBus(16.1,Math.max(-5,-5+t*2.3));}
       else if(phase==='explore'||phase==='decision')drawBus(16.1,-4+(Math.sin(elapsed*.4)+1)*.2);
       if(!safe||!group)person(maya.x,maya.y,'#9871b0','#45334b');
@@ -350,19 +351,19 @@
       person(11,10,'#9871b0','#45334b'); // Maya
       person(14,13,'#599a84','#4d392e'); // Amine
       person(12,11,'#d98c5e','#4f3b31'); // Lucas
-      person(phase==='explore'?player.x:13,phase==='explore'?player.y:11,'#5b9cb4','#3c3447',false,player.dir);
+      person(phase==='explore'?player.x:phase==='social'?13+Math.min(2,elapsed*.85):13,phase==='explore'?player.y:11,'#5b9cb4','#3c3447',phase==='social',player.dir);
       if(risky){for(let i=0;i<7;i++){const a=elapsed*90+i*74;phone(235+Math.sin(i*3)*a*.3,110+Math.cos(i*5)*a*.12);}}
-      else if(phase==='social'){label('?!',12*T+12,9*T,'#fce19b',11);}else if(safe){label(group?'THANK YOU':'...',14*T+12,12*T+1,'#eaf8cf',8);}
+      else if(phase==='social'){label('HA!',12*T+12,9*T,'#fce19b',10);}else if(safe){label(group?'THANK YOU':'...',14*T+12,12*T+1,'#eaf8cf',8);}
       if(phase==='decision'||phase==='explore')phone(12*T+13,11*T-14);
     }else{
       person(11,10,'#a58fbb','#46383f'); // Lina
       person(12,11,'#d98c5e','#4f3b31'); // Noah
-      person(phase==='explore'?player.x:13,phase==='explore'?player.y:11,'#5b9cb4','#3c3447',false,player.dir);
+      person(phase==='explore'?player.x:phase==='social'?13+Math.min(2,elapsed*.85):13,phase==='explore'?player.y:11,'#5b9cb4','#3c3447',phase==='social',player.dir);
       if(risky){
         const x=22+Math.min(3,elapsed*1.4),y=10-Math.min(2,elapsed*.6);
         person(x,y,'#e8a470','#513c36',true);
         if(elapsed>1.7){px(x*T-2,y*T-3,24,4,'#f1ce92');}
-      }else if(phase==='social'){label('...',12*T,9*T,'#f8f2d5',10);}else if(safe){label(ending==='alternative'?'PHOTO!':'BOUNDARY',24*T,15*T,'#f8f2d5',8);}
+      }else if(phase==='social'){label('HA!',12*T,9*T,'#f8f2d5',10);}else if(safe){label(ending==='alternative'?'PHOTO!':'BOUNDARY',24*T,15*T,'#f8f2d5',8);}
     }
     if(phase==='explore'&&!dialogueOpen){npcBubble(12,11,'!');if(L.inRange(player,current().target,2))label('E · TALK',12*T,10*T+6,'#fff5d6',8);}
     if(chapterIndex===0&&phase==='safe'&&elapsed>3.4)label('SKATEPARK',25*T,13*T,'#fff4db',8);

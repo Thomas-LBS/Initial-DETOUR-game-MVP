@@ -24,7 +24,7 @@ test('dialogue remains scrollable and options are accessible without full screen
  assert.match(game,/choiceButtons\[Number\(k\)-1\]/);
 });
 test('assets are cache versioned and gameplay keeps untimed decisions',()=>{
- for(const name of ['logic.js','music.js','cinematics.js','social.js','gba-art.js','pixel-snow.js','game.js'])assert.ok(html.includes(name+'?v=8'),name);
- assert.ok(html.includes('styles.css?v=8'));
+ for(const name of ['logic.js','music.js','cinematics.js','social.js','gba-art.js','pixel-snow.js','game.js'])assert.ok(html.includes(name+'?v=9'),name);
+ assert.ok(html.includes('styles.css?v=9'));
  assert.doesNotMatch(html,/decision-timer/);
 });

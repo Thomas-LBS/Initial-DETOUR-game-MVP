@@ -134,3 +134,7 @@ Scripts/styles are versioned with `?v=7` to reduce stale GitHub Pages caches. Al
 - Purple Night website and animated falling pixel-snow remain unchanged; scripts/styles now use `?v=8` to avoid cache staleness.
 
 Danger scenes retain exaggerated non-graphic red ink splashes and flying props; graphic dismemberment of teen characters is not depicted.
+
+## Latest update: randomized decision order
+
+Each dialogue independently shuffles its available answer options using Fisher–Yates. The four safety-decision choices therefore no longer always appear in the same safe/cooperative/social/danger order. The associated consequences and callback handlers stay attached to their original choices. Answer labels (1–4) and keyboard shortcuts follow the newly displayed order. Reopening the checkpoint shuffles again, while single-option NPC dialogues remain unchanged. There is still no time limit.

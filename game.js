@@ -86,7 +86,9 @@
     dialogueOpen=true;speakerEl.textContent=name;dialogueText.textContent=text;actionsEl.replaceChildren();choiceButtons=[];
     drawSpeakerPortrait(name);dialogue.dataset.speaker=name.toLowerCase().replace(/[^a-z]/g,'');
     dialogue.classList.toggle('dark',dark);
-    choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn'+(c.primary?' primary':'');btn.textContent=`${i+1}. ${c.text}`;
+    // Fresh random order whenever dialogue opens (including checkpoint retries).
+    // The key number and callback remain attached to the displayed answer.
+    L.shuffleChoices(choices).forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn'+(c.primary?' primary':'');btn.textContent=`${i+1}. ${c.text}`;
       btn.addEventListener('click',()=>{if(!dialogueOpen)return;music.effect('click');c.onClick();});actionsEl.appendChild(btn);choiceButtons.push(btn);});
     dialogue.classList.remove('hidden');
   }

@@ -22,6 +22,17 @@
   const COOPERATIVE=Object.freeze(new Set(['group-crossing','supported','alternative']));
   const SOCIAL=Object.freeze(new Set(['mocked','excluded','ridiculed']));
   const CRITICAL=Object.freeze(new Set(['collision','spread','fall']));
+  // Fisher–Yates: shuffle the display order without mutating the original
+  // options. Each item retains its own onClick handler, so outcomes never change.
+  // rng is injectable for deterministic tests; in the game it defaults to Math.random.
+  function shuffleChoices(options,rng=Math.random){
+    const shuffled=Array.from(options);
+    for(let i=shuffled.length-1;i>0;i--){
+      const j=Math.floor(rng()*(i+1));
+      [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+    }
+    return shuffled;
+  }
   function chapter(index){return CHAPTERS[Math.max(0,Math.min(CHAPTERS.length-1,index))];}
   function outcomeFor(chapterId,choice){return OUTCOMES[chapterId]?.[choice]??null;}
   function outcomeKind(outcome){if(CRITICAL.has(outcome))return'danger';if(SOCIAL.has(outcome))return'social';if(COOPERATIVE.has(outcome))return'cooperative';return Object.values(OUTCOMES).some(group=>Object.values(group).includes(outcome))?'safe':null;}
@@ -60,5 +71,5 @@
     if(['gameover','complete'].includes(phase)&&event==='retry')return'decision';
     return phase;
   }
-  return {COLS,ROWS,TILE,CHOICES,CHAPTERS,chapter,outcomeFor,outcomeKind,isCritical,canWalk,inRange,consequence,nextPhase};
+  return {COLS,ROWS,TILE,CHOICES,CHAPTERS,chapter,shuffleChoices,outcomeFor,outcomeKind,isCritical,canWalk,inRange,consequence,nextPhase};
 });

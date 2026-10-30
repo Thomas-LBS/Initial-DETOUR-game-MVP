@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#101c2b" />
+  <meta name="description" content="DETOUR — a pixel-art adventure about choices, friendships, and safety." />
+  <title>DETOUR | Every street is a choice</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="logic.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#game" aria-label="DETOUR home"><span class="brand-symbol" aria-hidden="true">✦</span> DETOUR<span class="brand-period">.</span></a>
+      <div class="edition">PIXEL ADVENTURE <span class="edition-divider">/</span> CHAPTER 01</div>
+      <span class="top-tag">PLAYABLE PROTOTYPE <span class="live-dot" aria-hidden="true"></span></span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow"><span class="mini-square"></span> THE NEIGHBORHOOD IS YOURS TO EXPLORE</p>
+        <h1>Every street<br />is a <em>choice.</em></h1>
+        <p class="hero-lead">A retro pixel adventure about friendship, freedom, and the split-second decisions that change your day.</p>
+      </section>
+
+      <section class="game-layout" id="game" aria-label="DETOUR game and mission journal">
+        <div class="game-frame">
+          <div class="frame-top"><span><span class="frame-indicator"></span> DETOUR / WESTSIDE</span><span id="scene-label">EPISODE 01: THE SHORTCUT</span></div>
+          <div class="screen-wrap" id="screen-wrap">
+            <canvas id="game-canvas" width="480" height="320" aria-label="Pixel art town. Use arrow keys or WASD to move, E or Space to interact with Lucas and objects.">Your browser needs Canvas to play DETOUR.</canvas>
+            <div class="screen-vignette" aria-hidden="true"></div>
+            <div id="screen-overlay" class="screen-overlay" aria-live="polite"></div>
+            <div id="dialogue" class="dialogue hidden" aria-live="polite">
+              <div class="dialogue-top"><span id="speaker" class="speaker">LUCAS</span><span class="dialogue-decoration" aria-hidden="true">◆ ◆ ◆</span></div>
+              <p id="dialogue-text"></p>
+              <div id="dialogue-actions" class="dialogue-actions"></div>
+            </div>
+            <div class="screen-corner corner-tl" aria-hidden="true"></div><div class="screen-corner corner-tr" aria-hidden="true"></div>
+            <div class="screen-corner corner-bl" aria-hidden="true"></div><div class="screen-corner corner-br" aria-hidden="true"></div>
+          </div>
+          <div class="frame-bottom">
+            <span id="status-line" role="status">PRESS START TO BEGIN YOUR DAY</span>
+            <div class="frame-actions"><button id="mute-btn" class="icon-button" aria-label="Mute sound" title="Toggle sound">♫</button><button id="restart-btn" class="icon-button" aria-label="Restart chapter" title="Restart chapter">↻</button></div>
+          </div>
+        </div>
+
+        <aside class="journal" aria-label="Field journal">
+          <div class="journal-header"><span class="journal-icon" aria-hidden="true">▣</span><span>FIELD JOURNAL</span><span class="chapter-number">NO. 001</span></div>
+          <div class="journal-section"><p class="side-kicker">CURRENT QUEST</p><h2>The shortcut<span class="quest-star" aria-hidden="true">✳</span></h2><p class="quest-detail">School's out. Your friends are waiting to head to the skatepark. What could go wrong?</p></div>
+          <div class="journal-section progress-section"><p class="side-kicker">YOUR JOURNEY</p>
+            <div class="quest-stage active" id="stage-explore"><span class="stage-icon">01</span><span>Find your friends</span><span class="stage-check">●</span></div>
+            <div class="quest-stage" id="stage-decide"><span class="stage-icon">02</span><span>Make a choice</span><span class="stage-check">○</span></div>
+            <div class="quest-stage" id="stage-reflect"><span class="stage-icon">03</span><span>See what happens</span><span class="stage-check">○</span></div>
+          </div>
+          <div class="journal-section tip-section"><p class="side-kicker">EXPLORER'S NOTE</p><p id="field-note">Look around. Talk to people. Sometimes the details matter more than you think.</p></div>
+          <div class="journal-bottom"><span>✦</span> NO PERFECT HEROES. JUST REAL CHOICES.</div>
+        </aside>
+      </section>
+
+      <section class="below-game">
+        <div class="howto"><span class="howto-heading">HOW TO PLAY</span><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span class="or">or</span> <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> <span class="howto-small">Move</span></span><span><kbd>E</kbd> <span class="or">/</span> <kbd>SPACE</kbd> <span class="howto-small">Interact</span></span><span><kbd>R</kbd> <span class="howto-small">Restart</span></span></div>
+        <div class="mobile-controls" aria-label="Touch game controls"><div class="dpad"><button data-dir="up" aria-label="Move up">▲</button><div><button data-dir="left" aria-label="Move left">◀</button><button data-dir="down" aria-label="Move down">▼</button><button data-dir="right" aria-label="Move right">▶</button></div></div><button id="touch-interact" class="interact-button">A <small>INTERACT</small></button></div>
+      </section>
+      <section class="footer-note"><p><span class="note-icon">i</span> This is a fictional learning prototype. Outcomes are illustrative, not predictions. Real road safety depends on many factors, including drivers and road design.</p><span>BUILT FOR CURIOSITY, NOT FEAR.</span></section>
+    </main>
+    <footer>DETOUR © 2026 <span>·</span> AN ORIGINAL PIXEL-ART LEARNING EXPERIMENT</footer>
+  </div>
+</body>
+</html>

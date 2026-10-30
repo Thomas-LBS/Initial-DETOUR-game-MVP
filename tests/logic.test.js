@@ -1,0 +1,9 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {canWalk,inRange,consequence,CHOICES,nextPhase,COLS,ROWS,TILE}=require('../logic');
+test('tilemap dimensions are stable',()=>{assert.equal(COLS,30);assert.equal(ROWS,20);assert.equal(TILE,16)});
+test('player may walk the school path and west pavement',()=>{assert.equal(canWalk(8,11),true);assert.equal(canWalk(13,11),true)});
+test('free movement never crosses traffic or enters buildings',()=>{assert.equal(canWalk(16,10),false);assert.equal(canWalk(6,5),false);assert.equal(canWalk(-1,11),false);assert.equal(canWalk(30,11),false)});
+test('NPC interaction requires proximity',()=>{assert.equal(inRange({x:10,y:11},{x:12,y:11}),true);assert.equal(inRange({x:8,y:11},{x:12,y:11}),false)});
+test('choices map to distinct learning consequences',()=>{assert.equal(consequence(CHOICES.FOLLOW),'collision');assert.equal(consequence(CHOICES.CROSS),'safe-arrival');assert.equal(consequence(CHOICES.MAYA),'new-information')});
+test('game state machine permits checkpoint retries',()=>{assert.equal(nextPhase('title','start'),'explore');assert.equal(nextPhase('explore','talk'),'decision');assert.equal(nextPhase('decision','follow'),'danger');assert.equal(nextPhase('danger','impact'),'gameover');assert.equal(nextPhase('gameover','retry'),'decision');assert.equal(nextPhase('decision','cross'),'safe');assert.equal(nextPhase('safe','arrived'),'complete');assert.equal(nextPhase('complete','retry'),'decision')});

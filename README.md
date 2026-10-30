@@ -2,9 +2,7 @@
 
 An **original retro pixel-art browser adventure** about teenagers navigating everyday social pressure and physical safety. Inspired by the feeling of Game Boy Color-era, top-down exploration games, with original characters, maps, and code-rendered graphics.
 
-> UX/UI concept prototype · Double Diamond: Develop → Deliver · October 2026 · Version 0.2 (three chapters)
-
-![DETOUR game with timed decision dialogue](assets/preview.png)
+> UX/UI concept prototype · Double Diamond: Develop → Deliver · October 2026 · Version 0.3 (four choices, no countdown)
 
 ## Play
 
@@ -21,15 +19,17 @@ No dependencies or build steps. Sound is synthesized in-browser using the Web Au
 
 ## Chapters
 
-| # | Story | Decision | Consequences |
-|---|---|---|---|
-| 1 | **The Shortcut** | Follow Lucas across the road, suggest a crossing, or ask Maya | Non-graphic vehicle collision or safe alternate route |
-| 2 | **The Humiliating Photo** | Forward a humiliating photo, refuse, or support Amine | Photo spreads and damages trust, or supportive/boundary-setting responses |
-| 3 | **The Rooftop Dare** | Join a climb, stay grounded, or suggest another shot | Non-graphic accident or social pushback / alternative group plan |
+Each chapter now offers **four distinct paths**. Choosing is never timed, and there is no automatic bad ending for hesitation.
 
-Each chapter has its **own original chiptune melody**, new pixel environment, contrasting dialogue bubbles, and a **10-second decision timer**. If time runs out, the situation escalates to the chapter's most difficult scripted outcome. Timeout does not imply the player is morally responsible for other people's harmful actions. The game treats outcomes as possibilities, not predictions.
+| Chapter | Individual safe choice | Cooperative positive resolution | Social fallout / ridicule | Real danger |
+|---|---|---|---|---|
+| 1. **The Shortcut** | Use the crossing yourself | Invite Lucas and Maya to cross as a group | Call out Lucas; face mockery and exclusion | Follow Lucas across traffic; non-graphic bus collision |
+| 2. **The Humiliating Photo** | Refuse sharing and report privately | Support Amine with Maya; seek help together | Challenge Lucas publicly; friends ridicule or exclude you | Share the image; bullying spreads and privacy is put at risk |
+| 3. **The Rooftop Dare** | Keep a safe distance | Suggest a creative ground-level shot together | Leave the group; face teasing and exclusion | Climb; a loose foothold leads to a non-graphic fall |
 
-The player's choices may lead to **critical endings** or **chapter-complete screens**, with a checkpoint replay option. After successful completion, the next chapter unlocks immediately.
+Consequences are scripted plausible examples, not guaranteed real-world outcomes. Bullying victims are **never responsible for being targeted**, and neither asking for help nor declining a dangerous activity is wrong. The soundtrack remains three original synthesized chiptune themes; it creates atmosphere **without a timer**.
+
+The player's choices may lead to a dramatic **danger ending** or to an **outcome-specific reflection screen** including an optional replay. Non-danger outcomes (including difficult social endings) allow progression to the next chapter.
 
 ## Controls
 
@@ -37,13 +37,12 @@ The player's choices may lead to **critical endings** or **chapter-complete scre
 |---|---|
 | Arrow keys / WASD | Walk around |
 | E / Space | Interact near NPCs |
-| 1 / 2 / 3 | Choose an on-screen response |
-| P / pause button | Pause or resume the 10-second timer |
-| R / restart button | Restart the entire adventure |
+| 1 / 2 / 3 / 4 | Choose an on-screen response |
+| R / restart button | Restart the adventure |
 | ♫ button | Mute or unmute original chiptune soundtrack |
 | Touch D-pad / A | Move / interact on mobile |
 
-The countdown begins **only when a timed conversation appears**. It pauses when the tab becomes hidden or the browser loses focus. The pause button is always available during a decision. Pausing is never penalized.
+**There is no countdown, pause key, automatic timeout or forced choice.** Take time to read the dialogue, consider the situation, and decide.
 
 ## UX and safeguarding
 
@@ -59,14 +58,13 @@ The game stores no personal information, analytics, cookies, or accounts. Before
 
 ## Project structure
 
-- `index.html` — semantic page, canvas, speech bubbles, decision timer, and controls
+- `index.html` — semantic page, canvas, speech bubbles, four choices, and controls
 - `styles.css` — responsive UI; automatic light/dark speech-bubble text contrast
-- `logic.js` — testable chapter data, collision boundaries, and outcome rules
+- `logic.js` — testable chapter data, movement boundaries, and outcome rules
 - `music.js` — original procedural chiptune soundtrack and optional sound effects
-- `game.js` — tile drawing, NPC interactions, narrative scenes, timer, checkpoints, and animation
+- `game.js` — tile drawing, NPC interactions, narrative scenes, choice outcomes, checkpoints, and animation
 - `tests/` — automated Node tests for movement, chapter data, and consequence mapping
 - `.github/workflows/test.yml` — automatic CI tests on pushes / pull requests
-- `assets/preview.png` — gameplay screenshot used only for the README
 
 Run tests:
 

@@ -4,26 +4,31 @@ const L=require('../logic');
 
 test('exactly three chapters in the intended order',()=>{
   assert.deepEqual(L.CHAPTERS.map(x=>x.id),['shortcut','photo','rooftop']);
-  assert.equal(L.DECISION_SECONDS,10);
+  assert.equal('DECISION_SECONDS' in L,false);
+  assert.equal('timeoutOutcome' in L,false);
 });
-test('every chapter offers three decisions and a worst-case timeout',()=>{
+test('every chapter offers four decisions, one in each consequence category',()=>{
   for(const item of L.CHAPTERS){
-    assert.equal(item.options.length,3);
+    assert.equal(item.options.length,4,item.id);
+    assert.equal(new Set(item.options).size,4,item.id);
+    const kinds=item.options.map(choice=>L.outcomeKind(L.outcomeFor(item.id,choice)));
+    assert.deepEqual(kinds,['safe','cooperative','social','danger'],item.id);
     for(const choice of item.options)assert.ok(L.outcomeFor(item.id,choice),`${item.id}: ${choice}`);
-    assert.equal(L.timeoutOutcome(item.id),item.timeout);
-    assert.equal(L.isCritical(item.timeout),true);
+    assert.equal('timeout' in item,false,'no chapter should expire');
   }
 });
-test('social bullying outcome is different from physical harm',()=>{
+test('bullying story differentiates direct help, teamwork, ridicule and spreading harm',()=>{
+  assert.equal(L.outcomeFor('photo','report'),'reported');
+  assert.equal(L.outcomeFor('photo','support'),'supported');
+  assert.equal(L.outcomeFor('photo','challenge'),'excluded');
   assert.equal(L.outcomeFor('photo','share'),'spread');
-  assert.equal(L.outcomeFor('photo','refuse'),'boundary');
-  assert.equal(L.outcomeFor('photo','support'),'support');
-  assert.equal(L.timeoutOutcome('photo'),'spread');
+  assert.equal(L.outcomeKind('spread'),'danger');
 });
-test('rooftop has a meaningful social boundary and a physical consequence',()=>{
-  assert.equal(L.outcomeFor('rooftop','climb'),'fall');
+test('rooftop offers safe boundary, group alternative, mockery and non-graphic accident',()=>{
   assert.equal(L.outcomeFor('rooftop','stay'),'boundary');
   assert.equal(L.outcomeFor('rooftop','alternative'),'alternative');
+  assert.equal(L.outcomeFor('rooftop','leave'),'ridiculed');
+  assert.equal(L.outcomeFor('rooftop','climb'),'fall');
 });
 test('all scenes have a playable path to their friends',()=>{
   for(let idx=0;idx<3;idx++){

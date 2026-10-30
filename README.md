@@ -104,3 +104,23 @@ All three social outcomes now have in-game meme cutscenes and supporting friends
 - Rooftop departure: Noah posts a GRANDMA MODE meme; Lina privately supports the player's choice.
 
 The game still includes four decisions per chapter, replayable branching outcomes, and **no countdown**. New files are social.js and tests/social.test.js. Assets have v6 query strings to avoid stale browser caches. The original tunes and sound effects contain no third-party recordings.
+
+## Version 7 · Game Boy Advance-era visual polish + Purple Night pixel snowfall
+
+This is a **visual-only iteration**. The three chapters, twelve decisions, existing social/dangerous consequences, untimed selection, checkpoint replay, and procedural music remain unchanged.
+
+### Game art
+- Original 4-direction sprites with four-frame walking and subtle idle movement; no external sprite sheets.
+- Sharper shadows, hair highlights, faces, clothing and backpack details.
+- Added location-specific tile decorations: street texture, school roof details, flowers, benches, caution barriers, mural, signs and courtyard games.
+- Original bus highlights and reflective panels.
+- 480 × 320 internal canvas is kept for crisp rendering at 2× the classic 240 × 160 GBA display size.
+
+### Page atmosphere
+- `pixel-snow.js` replaces the static star field with 24 mobile / 38 tablet / 62 desktop slowly falling lavender flakes.
+- Particles intermittently pixelate into squares, and nearby flakes briefly *merge visually*.
+- Animation uses Canvas 2D, device-pixel-ratio scaling (capped at 2), approximately 30 fps, bounded interactions, and no pointer events.
+- Animation pauses when the tab is hidden and falls back to a static background when reduced-motion is preferred.
+- Purple Night surrounds colorful in-game environments; main page headings are explicitly high contrast.
+
+Scripts/styles are versioned with `?v=7` to reduce stale GitHub Pages caches. All visual rendering is original and implemented without dependencies.

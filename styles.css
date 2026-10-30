@@ -35,3 +35,15 @@
 .dialogue .speaker{letter-spacing:.6px}
 .dialogue .choice-btn{font-family:'DM Sans',system-ui,sans-serif;line-height:1.35}
 @media(max-width:600px){.pixel-portrait{width:26px;height:26px;min-width:26px}}
+
+/* v7: site atmosphere is animated, while colorful original world pixels stay crisp. */
+body::before{display:none}
+#pixel-snow{position:fixed;inset:0;width:100%;height:100%;
+ pointer-events:none;z-index:0;opacity:.88}
+.page-shell{position:relative;z-index:1}
+/* Explicit contrast instead of inherited browser heading color. */
+.hero h1,.journal h2,.about h2{color:#F8EDFF}
+.hero h1 em,.about h2 em{color:#C6A7F1}
+.journal .quest-detail{color:#C4B3D7}
+.screen-wrap canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+@media (prefers-reduced-motion:reduce){#pixel-snow{opacity:.60}}

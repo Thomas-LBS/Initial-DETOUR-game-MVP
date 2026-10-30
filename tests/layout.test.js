@@ -25,8 +25,8 @@ test('foreground labels and comic speech bubbles have contrasting themes',()=>{
 test('three levels remain navigable and all source scripts have versioned URLs',()=>{
  const matches=[...html.matchAll(/data-chapter="(\d)"/g)];
  assert.deepEqual(matches.map(m=>m[1]),['0','1','2']);
- for(const file of ['logic.js','music.js','cinematics.js','social.js','game.js'])assert.ok(html.includes(`${file}?v=6`),file);
- assert.ok(html.includes('styles.css?v=6'));
+ for(const file of ['logic.js','music.js','cinematics.js','social.js','gba-art.js','pixel-snow.js','game.js'])assert.ok(html.includes(`${file}?v=7`),file);
+ assert.ok(html.includes('styles.css?v=7'));
 });
 test('no forced decisions',()=>{
  assert.doesNotMatch(html,/decision-timer|DECISION_SECONDS|10.second countdown/i);

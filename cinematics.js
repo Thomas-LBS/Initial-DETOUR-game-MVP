@@ -25,6 +25,15 @@
     for(let i=0;i<25;i++){const a=i*2.4,d=Math.min(1,t)*(12+(i%5)*9);
       rect(ctx,x+Math.cos(a)*d,y+Math.sin(a)*d,3+i%5,4+i%4,colors[i%colors.length]);}
   }
+  function redInkBurst(ctx,t){
+    const colors=['#BA3D55','#D95B63','#F0876B','#F4B17B'];
+    for(let i=0;i<16;i++){
+      const dist=16+(i%5)*11,side=i%2===0?0:480,angle=i*2.6;
+      const x=side+(side?-1:1)*(6+dist*Math.min(1,t));
+      const y=52+(i*37)%222+Math.sin(angle)*8;
+      rect(ctx,x,y,5+(i%4)*3,5+(i%3)*4,colors[i%colors.length]);
+    }
+  }
   function cloud(ctx,x,y,word){
     for(let i=0;i<10;i++){const a=i*Math.PI/5;rect(ctx,x+Math.cos(a)*21-10,y+Math.sin(a)*15-9,23,20,i%2?'#f7d392':'#fff0c7');}
     text(ctx,word,x,y+4,'#a83d50',14);
@@ -38,13 +47,22 @@
     rect(ctx,-7,-13,14,6,'#eac891');rect(ctx,-6,0,12,9,'#d67e8b');ctx.restore();
   }
   function chat(ctx,x,y,s,color){rect(ctx,x+4,y+4,113,29,'#122734');rect(ctx,x,y,113,29,color);text(ctx,s,x+56,y+20,'#243849',11);}
+  function lunchPhoto(ctx){
+    rect(ctx,167,76,146,146,'#F5E7C9');rect(ctx,171,80,138,108,'#C7DCBA');
+    rect(ctx,216,94,46,20,'#523F4B');rect(ctx,222,106,33,28,'#ECC39D');
+    rect(ctx,226,115,4,4,'#273C45');rect(ctx,244,115,4,4,'#273C45');
+    rect(ctx,209,136,63,37,'#599A84');rect(ctx,235,158,17,7,'#E6A659');
+    rect(ctx,182,175,115,12,'#B58B73');rect(ctx,209,169,52,8,'#F6E5C3');
+    for(let i=0;i<8;i++)rect(ctx,231+(i%4)*8,151+Math.floor(i/4)*8,5,4,'#E7A74D');
+    rect(ctx,170,194,140,23,'#241930');text(ctx,'SOUP OF THE DAY',240,211,'#F7D6A6',12);
+  }
   function draw(ctx,{ending,time,width:W,height:H,reducedMotion=false}={}){
     if(!timings[ending])return;
     ctx.save();
     const stage=frameFor(ending,time);
     if(ending==='collision'){
       if(stage==='warning')banner(ctx,'BEEEEEP!',65);
-      if(stage==='impact'){burst(ctx,264,169,(time-2.18)*2);cloud(ctx,264,168,'BONK!');
+      if(stage==='impact'){burst(ctx,264,169,(time-2.18)*2);redInkBurst(ctx,(time-2.18)*2);cloud(ctx,264,168,'BONK!');
         shoe(ctx,260+(time-2.18)*85,124-(time-2.18)*43,reducedMotion?0:time*3);
         banner(ctx,'THAT WAS NOT A SHORTCUT');}
       if(stage==='aftermath'){rect(ctx,0,0,W,H,'#172839f0');shoe(ctx,334,164,1.4);
@@ -52,15 +70,16 @@
         text(ctx,'LUCAS: "DUDE... NO."',240,191,'#f4e7c7',13);}
     }else if(ending==='fall'){
       if(stage==='warning'){banner(ctx,'WOBBLE... WOBBLE...',70);text(ctx,'!',397,155,'#ffe0a0',27);}
-      if(stage==='impact'){burst(ctx,372,198,(time-2.36)*2);cloud(ctx,371,200,'CRASH!');
+      if(stage==='impact'){burst(ctx,372,198,(time-2.36)*2);redInkBurst(ctx,(time-2.36)*2);cloud(ctx,371,200,'CRASH!');
         phone(ctx,320-(time-2.36)*27,98+(time-2.36)*80,reducedMotion?0:time*2);
         banner(ctx,'GRAVITY: 1 / CLOUT: 0');}
       if(stage==='aftermath'){rect(ctx,0,0,W,H,'#172839ee');phone(ctx,330,194,-.3);
         text(ctx,'THE PHOTO CAN WAIT',240,124,'#ffe0a0',19);
         text(ctx,'NOAH: "CALL FOR HELP!"',240,186,'#f4e7c7',13);}
     }else{
-      if(stage==='sending'){phone(ctx,238,158,0);banner(ctx,'SENT.',270);}
+      if(stage==='sending'){lunchPhoto(ctx);banner(ctx,'SENT.',270);}
       if(stage==='viral'||stage==='overload'){
+        lunchPhoto(ctx);
         if(stage==='overload')rect(ctx,0,0,W,H,'#322b42c9');
         const words=['LOL','SHARED','LOL','SCREENSHOT','REPOST','LOL','FORWARDED','...','SHARE','MORE','HA HA','SENT'];
         const count=stage==='viral'?8:12;

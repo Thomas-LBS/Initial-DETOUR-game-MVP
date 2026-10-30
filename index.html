@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#23172f" />
   <meta name="description" content="DETOUR, a pixel adventure where your choices change the story." />
   <title>DETOUR | Every choice changes the story</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
-  <script src="logic.js?v=5" defer></script>
-  <script src="music.js?v=5" defer></script>
-  <script src="cinematics.js?v=5" defer></script>
-  <script src="game.js?v=5" defer></script>
+  <link rel="stylesheet" href="styles.css?v=6" />
+  <script src="logic.js?v=6" defer></script>
+  <script src="music.js?v=6" defer></script>
+  <script src="cinematics.js?v=6" defer></script>
+  <script src="social.js?v=6" defer></script>
+  <script src="game.js?v=6" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -52,7 +53,7 @@
               <div id="screen-overlay" class="screen-overlay" aria-live="polite"></div>
               <div id="scene-toast" class="scene-toast hidden" aria-live="polite"></div>
               <div id="dialogue" class="dialogue hidden" role="group" aria-label="Character conversation" aria-live="polite">
-                <div class="dialogue-top"><span class="speaker-avatar" aria-hidden="true">✦</span><span id="speaker" class="speaker">LUCAS</span><span class="dialogue-decoration" aria-hidden="true">◆ ◆ ◆</span></div>
+                <div class="dialogue-top"><canvas id="speaker-portrait" class="speaker-avatar pixel-portrait" width="24" height="24" aria-hidden="true"></canvas><span id="speaker" class="speaker">LUCAS</span><span class="dialogue-decoration" aria-hidden="true">◆ ◆ ◆</span></div>
                 <p id="dialogue-text"></p>
                 <div id="dialogue-actions" class="dialogue-actions"></div>
               </div>
@@ -106,7 +107,7 @@
         <div><p class="side-kicker">ABOUT DETOUR</p><h2>Bad choices. Bigger stories.<br /><em>Another way forward.</em></h2></div>
         <p>Three short pixel-art stories about risk, friendship and finding your voice. Explore every outcome, replay decisions, and learn at your own pace. There are no timers and no perfect heroes.</p>
       </section>
-      <section class="footer-note"><p><span class="note-icon">i</span> Fictional situations, satirical cartoon consequences, and no graphic injuries. Bullying is never the victim’s fault. Outcomes are possibilities, not predictions. Original chiptune music can be muted.</p><span>3 CHAPTERS · 4 CHOICES EACH</span></section>
+      <section class="footer-note"><p><span class="note-icon">i</span> Fictional situations, original satirical pixel-art consequences, and non-graphic red splats. Bullying is never the victim’s fault. Outcomes are possibilities, not predictions. Original chiptune music can be muted.</p><span>3 CHAPTERS · 4 CHOICES EACH</span></section>
     </main>
     <footer>DETOUR © 2026 <span>·</span> AN ORIGINAL PIXEL-ART LEARNING EXPERIMENT</footer>
   </div>

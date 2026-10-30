@@ -18,3 +18,20 @@
 .screen-wrap:fullscreen{width:100vw;height:100vh;max-height:none;min-height:100vh;border-radius:0;background:#1b0d2c}
 .screen-wrap:fullscreen canvas{width:100%;height:100%;object-fit:contain}
 .screen-wrap:fullscreen .dialogue{bottom:clamp(20px,4vh,58px)}
+/* v6 semantic tokens and original pixel-art character portrait */
+:root{
+ --web-bg:#0D0407;--web-surface:#23172F;--web-card:#32204A;
+ --web-interactive:#482F69;--web-accent:#69488D;
+ --web-text:#F8EDFF;--web-text-muted:#C4B3D7;--web-warm:#F2DB9C;
+ --game-grass:#88B47B;--game-forest:#447E61;--game-road:#566871;
+ --game-path:#E4DFC4;--game-sun:#EBBE68;
+}
+.pixel-portrait{width:29px;height:29px;min-width:29px;flex-shrink:0;
+ padding:0;border:2px solid #39264F;border-radius:3px;
+ image-rendering:pixelated;image-rendering:crisp-edges;background:#69488D}
+.dialogue.dark .pixel-portrait{border-color:#F2DB9C}
+.dialogue[data-speaker="maya"] .pixel-portrait,
+.dialogue[data-speaker="lina"] .pixel-portrait{border-color:#D5B6E1}
+.dialogue .speaker{letter-spacing:.6px}
+.dialogue .choice-btn{font-family:'DM Sans',system-ui,sans-serif;line-height:1.35}
+@media(max-width:600px){.pixel-portrait{width:26px;height:26px;min-width:26px}}

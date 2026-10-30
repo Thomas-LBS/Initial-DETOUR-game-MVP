@@ -93,3 +93,14 @@ Three original, non-graphic pixel-art cutscenes: a school-bus collision with a f
 - Clickable chapter selector, touch controls, and a fullscreen action. Existing chapters, four-choice branching stories, untimed decisions, and original audio are preserved.
 - Assets use query-string version `v=5` to reduce stale-cache problems after Pages deployment.
 - Includes five new static UI/layout tests, with explicit contrast checks during design.
+
+## Version 6: retro comedy, speech portraits and social consequences
+
+The website remains atmospheric Purple Night; the playable world stays colorful Game Boy Color-inspired. Speech bubbles have original pixel character portraits. Serious outcomes feature cartoon red ink-splashes, never detailed on-body injuries. The bullying scenario uses an illustrated, fictional cafeteria soup spill, not an invasive photograph.
+
+All three social outcomes now have in-game meme cutscenes and supporting friends:
+- Shortcut: Lucas posts a CAPTAIN CROSSWALK class-chat meme.
+- Bullying confrontation: Lucas responds with a HERO SPEECH meme; Maya privately offers support.
+- Rooftop departure: Noah posts a GRANDMA MODE meme; Lina privately supports the player's choice.
+
+The game still includes four decisions per chapter, replayable branching outcomes, and **no countdown**. New files are social.js and tests/social.test.js. Assets have v6 query strings to avoid stale browser caches. The original tunes and sound effects contain no third-party recordings.

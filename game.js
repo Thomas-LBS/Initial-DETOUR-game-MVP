@@ -3,6 +3,7 @@
   const L=window.DetourLogic;
   const music=window.DetourMusic;
   const Cine=window.DetourCinematics;
+  const Social=window.DetourSocial;
   const reducedMotion=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const canvas=document.getElementById('game-canvas');
   const ctx=canvas.getContext('2d',{alpha:false});
@@ -21,10 +22,11 @@
   const questDetail=document.getElementById('quest-detail');
   const chapterNumber=document.getElementById('chapter-number');
   const toast=document.getElementById('scene-toast');
+  const speakerPortrait=document.getElementById('speaker-portrait');
   const keys=new Set();
   let chapterIndex=0,phase='title',dialogueOpen=false,player={x:8,y:11,dir:'down'},lucas={x:12,y:11},maya={x:11,y:10};
   let elapsed=0,last=0,nextMove=0,busY=-5,seenMaya=false,noticedRoad=false,screenShake=0,impactFlash=0,hasReached=false;
-  let ending=null,choiceButtons=[];
+  let ending=null,choiceButtons=[],socialPing=false,socialReaction=false;
   const pal={grass:'#88b47b',grass2:'#7eaa77',leaf:'#447e61',leaf2:'#66a577',dark:'#294a52',light:'#ecf2cc',stone:'#cccdb2',pave:'#e4dfc4',road:'#566871',edge:'#384e5c',cream:'#f8efcc',water:'#87c7c3',yellow:'#ebbe68',brick:'#bb866c',roof:'#be765d',shadow:'#274e5580'};
   const rand=(x,y)=>((x*73856093^y*19349663)>>>0)%100;
   const px=(x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
@@ -55,10 +57,24 @@
       else button.removeAttribute('aria-current');
     });
   }
+  function drawSpeakerPortrait(name){
+    if(!speakerPortrait)return;
+    const p=speakerPortrait.getContext('2d');if(!p)return;
+    p.imageSmoothingEnabled=false;p.clearRect(0,0,24,24);
+    const people={LUCAS:['#d89061','#513a32'],MAYA:['#a57bc1','#42334c'],NOAH:['#e2a477','#493b37'],LINA:['#b59bcb','#4c3b45'],EXPLORER:['#6e9fbd','#3b364c']};
+    const [shirt,hair]=people[name]||['#84a899','#41414b'];
+    const dot=(x,y,w,h,col)=>{p.fillStyle=col;p.fillRect(x,y,w,h);};
+    dot(0,0,24,24,'#69488d');dot(4,16,16,8,shirt);
+    dot(7,6,10,11,'#ebbc98');dot(5,4,14,5,hair);dot(7,2,10,4,hair);
+    dot(6,8,2,5,hair);dot(16,8,2,5,hair);
+    dot(9,11,2,2,'#263243');dot(14,11,2,2,'#263243');
+    dot(11,15,4,1,'#b77373');dot(9,18,6,3,'#f1d1a8');
+  }
   function showToast(text){toast.textContent=text;toast.classList.toggle('hidden',!text);}
   function setPhase(p){phase=p;elapsed=0;nextMove=0;updateJournal();}
   function openDialogue(name,text,choices,{dark=false}={}){
     dialogueOpen=true;speakerEl.textContent=name;dialogueText.textContent=text;actionsEl.replaceChildren();choiceButtons=[];
+    drawSpeakerPortrait(name);dialogue.dataset.speaker=name.toLowerCase().replace(/[^a-z]/g,'');
     dialogue.classList.toggle('dark',dark);
     choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn'+(c.primary?' primary':'');btn.textContent=`${i+1}. ${c.text}`;
       btn.addEventListener('click',()=>{if(!dialogueOpen)return;music.effect('click');c.onClick();});actionsEl.appendChild(btn);choiceButtons.push(btn);});
@@ -68,7 +84,7 @@
   function setChapter(idx){
     chapterIndex=Math.max(0,Math.min(L.CHAPTERS.length-1,idx));
     player={x:8,y:11,dir:'down'};lucas={x:12,y:11};maya={x:11,y:10};
-    seenMaya=false;noticedRoad=false;hasReached=false;ending=null;busY=-5;impactFlash=0;screenShake=0;
+    seenMaya=false;noticedRoad=false;hasReached=false;ending=null;busY=-5;impactFlash=0;screenShake=0;socialPing=false;socialReaction=false;
     closeDialogue();overlay.innerHTML='';showToast('');
     music.setTrack(current().music);
     updateJournal();
@@ -77,15 +93,15 @@
   const OUTCOME_TEXT={
     'safe-arrival':{title:'YOU FOUND YOUR WAY',body:'You head for the marked crossing yourself. Lucas stays behind for a moment. You make it across safely, and you can meet up later.',reflection:'Choosing your own route is an option, even when friends disagree.'},
     'group-crossing':{title:'A PLAN TOGETHER',body:'You ask Lucas and Maya to walk to the crossing with you. Maya agrees, and Lucas follows after a little grumbling. You reach the skatepark together.',reflection:'Inviting others into a safer plan can make it easier to stick together.'},
-    mocked:{title:'THAT STUNG',body:'You call Lucas reckless in front of the others and walk away from the road. Lucas snaps back: “Thanks, safety police.” A couple of friends laugh and leave you out of the chat. You are safe, but their reaction hurts.',reflection:'Mockery is their choice, not your fault. You can still set boundaries and find support.'},
+    mocked:{title:'SOCIAL END: CAPTAIN CROSSWALK',body:'You nickname him Reckless Lucas in public. He retaliates with a ridiculous CAPTAIN CROSSWALK meme in the class chat. You stay safe, but the jokes sting.',reflection:'The mockery is Lucas’s choice, not your fault. You can still set boundaries and find support.'},
     collision:{title:'BAD END: NO SHORTCUT',body:'You follow Lucas. The bus appears from behind a parked vehicle. HONK! A shoe flies, everything cuts to black, and a friend calls for help.',reflection:'The animation is exaggerated, but the danger is real. What could you notice or suggest before crossing?'},
     reported:{title:'YOU STOP THE SPREAD',body:'You refuse to forward the photo and show it to a trusted adult without redistributing it. The adult takes the situation seriously and checks on Amine.',reflection:'Protecting someone’s privacy and asking for help are meaningful actions.'},
     supported:{title:'YOU ARE NOT ALONE',body:'You talk privately with Maya. Together you check on Amine and ask a trusted adult for help. Amine decides what support he wants next.',reflection:'Cooperation can make it easier for someone targeted by bullying to be heard.'},
-    excluded:{title:'LEFT OUT OF THE GROUP',body:'You challenge Lucas loudly for showing the photo. He replies, “What a hero,” and others laugh and exclude you from their group chat. You did not share the picture, and the mockery is their responsibility.',reflection:'Speaking up can bring social pressure. You deserve support too.'},
-    spread:{title:'BAD END: POSTED FOREVER',body:'One tap. Then a ridiculous avalanche of forwards, screenshots, and jokes. The laughs stop feeling funny when Amine leaves the chat.',reflection:'The joke is on the people who shared it, not the person targeted. How could you help stop the spread?'},
+    excluded:{title:'SOCIAL END: HERO SPEECH',body:'You confront Lucas publicly about the photo. He posts a goofy HERO SPEECH meme and removes you from the group chat. Maya privately thanks you for speaking up.',reflection:'Lucas and the group are responsible for their teasing. Supporting a bullied student still matters.'},
+    spread:{title:'BAD END: POSTED FOREVER',body:'You forward a photo of Amine spilling soup in the cafeteria. Edits, screenshots, and forwards pile up until Amine leaves the chat.',reflection:'The people sharing the picture are responsible for the harm. How can you support Amine and stop the spread?'},
     boundary:{title:'YOU CHOOSE YOUR SPACE',body:'You stay away from the closed structure. Lina also remains below. The group continues discussing the photo, while you keep a safe distance.',reflection:'You can decide not to join a risky activity without controlling anyone else.'},
     alternative:{title:'A BETTER SHOT',body:'You invite Noah and Lina to try a dramatic ground-level angle by the mural. Lina joins immediately, and Noah eventually agrees. The group takes a creative photo without climbing.',reflection:'Cooperation can change the plan while respecting everyone’s independence.'},
-    ridiculed:{title:'AN AWKWARD WALK HOME',body:'You tell the group you are leaving and walk away from the structure. Noah calls you a “scaredy-cat,” and a few friends laugh. You are physically safe, but the exclusion feels real.',reflection:'Being mocked does not make your boundary wrong. Others are responsible for their teasing.'},
+    ridiculed:{title:'SOCIAL END: GRANDMA MODE',body:'You leave the rooftop dare. Noah posts a ridiculous GRANDMA MODE pajama meme; messages pile up. Lina reminds you that leaving was a valid choice.',reflection:'Staying safe can feel awkward, but a boundary is not a failure. The teasing is their responsibility.'},
     fall:{title:'BAD END: CLOUT DROP',body:'You climb for the perfect picture. A loose foothold gives way. The phone tumbles away, and a friend urgently calls for help.',reflection:'A closed structure can be genuinely dangerous. The cartoon fall is not a prediction; how else might you get the photo?'}
   };
   const overlayTemplates={
@@ -128,7 +144,7 @@
   function start(){overlay.innerHTML='';setPhase('explore');music.start();music.effect('click');}
   function nextChapter(){music.stop();setChapter(chapterIndex+1);setPhase('explore');music.start();}
   function retry(){
-    closeDialogue();overlay.innerHTML='';showToast('');busY=-5;impactFlash=0;screenShake=0;hasReached=false;ending=null;
+    closeDialogue();overlay.innerHTML='';showToast('');busY=-5;impactFlash=0;screenShake=0;hasReached=false;ending=null;socialPing=false;socialReaction=false;
     player={x:13,y:11,dir:'right'};
     music.setTrack(current().music);music.start();openChallenge();
   }
@@ -139,14 +155,14 @@
       openDialogue('LUCAS',intro,[
         {text:'Go to the marked crossing yourself',onClick:()=>resolve('cross')},
         {text:'Invite Lucas and Maya to cross together',onClick:()=>resolve('together')},
-        {text:'Call Lucas reckless and leave',onClick:()=>resolve('confront')},
+        {text:'Call him “Reckless Lucas” in front of everyone',onClick:()=>resolve('confront')},
         {text:'Follow Lucas into traffic',onClick:()=>resolve('follow')}
       ]);
     }else if(chapterIndex===1){
-      openDialogue('LUCAS',"'Look at this photo of Amine! Send it to the group. It's hilarious!' Maya looks uncomfortable.",[
+      openDialogue('LUCAS',"'Someone photographed Amine spilling soup at lunch. Send it to the group! It’s hilarious!' Maya looks uncomfortable.",[
         {text:'Refuse and report the image privately',onClick:()=>resolve('report')},
         {text:'Team up with Maya to support Amine',onClick:()=>resolve('support')},
-        {text:'Challenge Lucas in front of everyone',onClick:()=>resolve('challenge')},
+        {text:'Call Lucas out in front of the group',onClick:()=>resolve('challenge')},
         {text:'Forward the humiliating photo',onClick:()=>resolve('share')}
       ],{dark:true});
     }else{
@@ -162,22 +178,22 @@
     const out=L.outcomeFor(current().id,choice);
     if(!out)return;
     ending=out;
-    closeDialogue();overlay.innerHTML='';hasReached=false;
+    closeDialogue();overlay.innerHTML='';hasReached=false;socialPing=false;socialReaction=false;
     const category=L.outcomeKind(out);
     setPhase(category==='danger'?'danger':category);
     music.setTension(category==='danger'?1:category==='social'?.5:0);
     const messages={
       'safe-arrival':'YOU CHOOSE THE MARKED CROSSING.',
       'group-crossing':'MAYA JOINS YOU. LUCAS FOLLOWS.',
-      mocked:'LUCAS TEASES YOU. THE OTHERS LAUGH.',
+      mocked:'LUCAS OPENS THE CLASS CHAT…',
       collision:'THE SCHOOL BUS APPROACHES…',
       reported:'YOU ASK A TRUSTED ADULT FOR HELP.',
       supported:'MAYA AGREES TO HELP AMINE WITH YOU.',
-      excluded:'LUCAS MOCKS YOU IN FRONT OF THE GROUP.',
+      excluded:'LUCAS STARTS MAKING A MEME…',
       spread:'THE PHOTO IS BEING FORWARDED…',
       boundary:'YOU STAY AWAY FROM THE STRUCTURE.',
       alternative:'YOUR FRIENDS TRY A NEW PHOTO ANGLE.',
-      ridiculed:'NOAH CALLS YOU A SCAREDY-CAT.',
+      ridiculed:'NOAH SHARES A JOKE ABOUT YOU…',
       fall:'THE GROUP STARTS CLIMBING…'
     };
     showToast(messages[out]||'YOUR CHOICE CHANGES WHAT HAPPENS NEXT.');
@@ -419,6 +435,7 @@
     if(chapterIndex===0&&phase==='safe'&&elapsed>3.4)label('SKATEPARK',25*T,13*T,'#fff4db',8);
     if(impactFlash>0){ctx.fillStyle=`rgba(239,100,80,${Math.min(.45,impactFlash)})`;ctx.fillRect(0,0,W,H);}
     if(phase==='danger')Cine.draw(ctx,{ending,time:elapsed,width:W,height:H,reducedMotion});
+    if(phase==='social')Social.draw(ctx,{ending,time:elapsed,width:W,height:H,reducedMotion});
     ctx.restore();
     px(7,7,188,20,'#203d49e9');px(9,9,3,15,'#e7bd77');
     ctx.fillStyle='#f5edcc';ctx.textAlign='left';ctx.font='bold 8px monospace';
@@ -432,7 +449,13 @@
     if(phase==='explore'&&!dialogueOpen&&now>nextMove){for(const k of keys){const dir=keyToDir(k);if(dir){attemptMove(...dir);nextMove=now+130;break;}}}
     if(phase==='danger'&&elapsed>=Cine.impactAt(ending)&&!hasReached){hasReached=true;impactFlash=.65;screenShake=reducedMotion?0:4;music.effect(ending==='spread'?'notification':ending==='collision'?'horn':'crash');}
     if(phase==='danger'&&elapsed>Cine.durationFor(ending)){showToast('');setPhase('gameover');music.stop();showOverlay('gameover');}
-    if(['safe','cooperative','social'].includes(phase)&&elapsed>(chapterIndex===0?5.1:3.2)){showToast('');setPhase('complete');music.effect('win');music.stop();showOverlay('complete');}
+    if(phase==='social'&&elapsed>=1.05&&!socialPing){socialPing=true;music.effect('notification');}
+    if(phase==='social'&&elapsed>=2.65&&!socialReaction){socialReaction=true;music.effect('mock');}
+    const endTime=phase==='social'?Social.durationFor(ending):(chapterIndex===0?5.1:3.2);
+    if(['safe','cooperative','social'].includes(phase)&&elapsed>endTime){
+      const wasSocial=phase==='social';showToast('');setPhase('complete');
+      music.effect(wasSocial?'click':'win');music.stop();showOverlay('complete');
+    }
     screenShake=Math.max(0,screenShake-dt*9);impactFlash=Math.max(0,impactFlash-dt*1.5);
     paintWorld();requestAnimationFrame(tick);
   }

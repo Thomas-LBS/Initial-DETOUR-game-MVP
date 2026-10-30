@@ -10,5 +10,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          for file in game.js logic.js music.js cinematics.js social.js; do node --check "$file"; done
       - name: Run unit tests
         run: node --test tests/*.test.js

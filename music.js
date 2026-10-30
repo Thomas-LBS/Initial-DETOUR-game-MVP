@@ -29,6 +29,7 @@
       if(kind==='impact'||kind==='crash'){[62,53,44,33].forEach((n,i)=>this.note(n,at+i*.105,.18,.23,'sawtooth'));}
        else if(kind==='horn'){[49,48,47].forEach((n,i)=>this.note(n,at+i*.14,.31,.20,'sawtooth'));}
        else if(kind==='notification'){[79,84,86,79,88].forEach((n,i)=>this.note(n,at+i*.07,.11,.14,'square'));}
+       else if(kind==='mock'){[76,72,68,64].forEach((n,i)=>this.note(n,at+i*.11,.14,.14,'triangle'));}
       else if(kind==='win'){[60,64,67,72].forEach((n,i)=>this.note(n,at+i*.11,.17,.23));}
       else this.note(76,at,.06,.11);}
     stop(){this.running=false;this.tension=0;if(this.interval){clearInterval(this.interval);this.interval=0;}}

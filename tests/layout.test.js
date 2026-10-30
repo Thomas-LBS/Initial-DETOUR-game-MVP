@@ -12,7 +12,7 @@ test('player remains the hero with a viewport at least 75vh high',()=>{
  assert.match(html,/id="game-canvas"/);
 });
 test('every dynamically referenced interface element exists',()=>{
- for(const id of ['screen-overlay','scene-toast','dialogue','speaker','dialogue-text','dialogue-actions','field-note','status-line','scene-label','quest-title','quest-detail','chapter-number','mute-btn','restart-btn','touch-interact','stage-explore','stage-decide','stage-reflect','location-chip','mode-chip','hud-prompt','fullscreen-btn'])assert.ok(html.includes(`id="${id}"`),id);
+ for(const id of ['screen-overlay','scene-toast','dialogue','speaker','speaker-portrait','dialogue-text','dialogue-actions','field-note','status-line','scene-label','quest-title','quest-detail','chapter-number','mute-btn','restart-btn','touch-interact','stage-explore','stage-decide','stage-reflect','location-chip','mode-chip','hud-prompt','fullscreen-btn'])assert.ok(html.includes(`id="${id}"`),id);
 });
 test('foreground labels and comic speech bubbles have contrasting themes',()=>{
  assert.match(css,/\.foreground-hud\{[^}]*z-index:4/);
@@ -25,8 +25,8 @@ test('foreground labels and comic speech bubbles have contrasting themes',()=>{
 test('three levels remain navigable and all source scripts have versioned URLs',()=>{
  const matches=[...html.matchAll(/data-chapter="(\d)"/g)];
  assert.deepEqual(matches.map(m=>m[1]),['0','1','2']);
- for(const file of ['logic.js','music.js','cinematics.js','game.js'])assert.ok(html.includes(`${file}?v=5`),file);
- assert.ok(html.includes('styles.css?v=5'));
+ for(const file of ['logic.js','music.js','cinematics.js','social.js','game.js'])assert.ok(html.includes(`${file}?v=6`),file);
+ assert.ok(html.includes('styles.css?v=6'));
 });
 test('no forced decisions',()=>{
  assert.doesNotMatch(html,/decision-timer|DECISION_SECONDS|10.second countdown/i);
